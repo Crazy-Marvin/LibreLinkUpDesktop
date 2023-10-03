@@ -1,21 +1,23 @@
 {
-  "name": "electron-quick-start",
-  "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "name": "LibreLinkUpDesktop",
+  "version": "0.0.1",
+  "description": "This is a desktop application that fetches your blood sugar from LibreLink Up",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
   },
-  "repository": "https://github.com/electron/electron-quick-start",
+  "repository": "https://github.com/Crazy-Marvin/LibreLinkUpDesktop",
   "keywords": [
     "Electron",
-    "quick",
-    "start",
-    "tutorial",
-    "demo"
+    "Linux",
+    "Windows",
+    "diabetes",
+    "blood glucose",
+    "libre link",
+    "libre link up"
   ],
-  "author": "GitHub",
-  "license": "CC0-1.0",
+  "author": "Crazy Marvin & Contributors",
+  "license": "Apache License 2.0",
   "devDependencies": {
     "electron": "^26.2.4"
   }
