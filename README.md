@@ -12,8 +12,26 @@ Translation status
 
 
 # LibreLinkUpDesktop
-This is a desktop application that fetches your blood sugar from LibreLink Up
+This is a desktop application that fetches your blood sugar from [LibreLinkUp](https://librelinkup.com/).
 
+It works like the official [LibreLinkUp smartphone app](https://play.google.com/store/apps/details?id=org.nativescript.LibreLinkUp) but on desktop clients like [Ubuntu](https://www.ubuntu.com/desktop/) or [Windows](https://www.windows.com/).
+
+Under the hood, [Electron](https://www.electronjs.org/) is used with [TypeScript](https://www.typescriptlang.org/) and [Vue.js](https://vuejs.org/).   
+As there is no offical API from [Abbott](https://www.freestyle.abbott/) yet, we use [this awesome client](https://github.com/DiaKEM/libre-link-up-api-client) from DiaKEM.
+
+#### Features of LibreLinkUpDesktop:
+- Show blood glucose level on your desktop in a little window
+- No tracking
+- Libre software
+- That's it. 🩸
+
+### Instructions:
+  - As sharing person, open your [Libre smartphone app](https://play.google.com/store/apps/details?id=com.freestylelibre3.app.de), go to _Connected Apps_, click on _Manage_ next to LibreLinkUp, click on _Add connection_ and input the details for the account you wish to use with LibreLinkUpDesktop.
+  - Save those credentials inside your password manager. You may use them for yourself or you may share them with someone.
+  - Start LibreLinkUpDesktop and enter those credentials.
+  - That's it. ☺️
+ 
+  Let me know about any issues by opening a new [issue on GitHub](https://github.com/Crazy-Marvin/LibreLinkUpDesktop/issues) or commenting on an existing issue if there is one already.
 
 # Screenshots
 
