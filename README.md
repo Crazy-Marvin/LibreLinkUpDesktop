@@ -6,7 +6,7 @@
 [![Issues](https://img.shields.io/github/issues/Crazy-Marvin/LibreLinkUpDesktop.svg?style=flat)](https://github.com/Crazy-Marvin/LibreLinkUpDesktop/issues)
 [![Pull requests](https://img.shields.io/github/issues-pr/Crazy-Marvin/LibreLinkUpDesktop.svg?style=flat)](https://github.com/Crazy-Marvin/LibreLinkUpDesktop/pulls)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/ee372082360f422d933079be116bb554)](https://app.codacy.com/gh/Crazy-Marvin/LibreLinkUpDesktop/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-Translation status
+[![Translation status](https://hosted.weblate.org/widget/librelinkupdesktop/librelinkupdesktop/svg-badge.svg)](https://hosted.weblate.org/engage/librelinkupdesktop/)
 [![Known Vulnerabilities](https://snyk.io/test/github/Crazy-Marvin/LibreLinkUpDesktop/badge.svg?targetFile=app%2Fbuild.gradle)](https://snyk.io/test/github/Crazy-Marvin/LibreLinkUpDesktop?targetFile=package.json)
 [![Electron](https://img.shields.io/badge/-Electron-blue?logo=electron&?labelColor=white&link=https%3A%2F%2Fwww.electronjs.org%2F)](https://www.electronjs.org/)
 
