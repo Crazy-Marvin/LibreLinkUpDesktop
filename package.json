@@ -109,7 +109,7 @@
     "@types/react-test-renderer": "^18.0.0",
     "@types/terser-webpack-plugin": "^5.0.4",
     "@types/webpack-bundle-analyzer": "^4.6.0",
-    "@typescript-eslint/eslint-plugin": "^5.59.8",
+    "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^5.59.8",
     "autoprefixer": "^10.4.15",
     "browserslist-config-erb": "^0.0.3",
