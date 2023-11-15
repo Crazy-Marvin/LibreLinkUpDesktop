@@ -1,4 +1,21 @@
 node_modules
+out/
+dist/
+node_modules/
+coverage/
+npm-debug.log
+yarn-error.log
+.DS_Store
+.awcache
+.idea/
+.vs/
+.vscode/*.log
+.eslintcache
+*.iml
+.envrc
+junit*.xml
+*.swp
+tslint-rules/
 
 # Logs
 logs
