@@ -20,6 +20,16 @@ npm run package-all
 
 Note: Executables can be found in `release/build` folder.
 
+A [release](https://github.com/Crazy-Marvin/LibreLinkUpDesktop/releases) should include those executables:
+- AppImage
+- snap
+- deb
+- MSI
+- EXE
+- AppX (Windows Store)
+- portable
+- pkg
+
 ## Customizing the application
 
 - Localization is located on `src/renderer/i18n` folder.
