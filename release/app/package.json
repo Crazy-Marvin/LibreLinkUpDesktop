@@ -1,8 +1,27 @@
 {
   "name": "LibreLinkUpDesktop",
-  "version": "4.6.0",
-  "description": "A foundation for scalable desktop apps",
-  "license": "MIT",
+  "version": "0.1.2",
+  "description": "This is a desktop application that fetches your blood sugar from LibreLinkUp",
+  "license": "Apache-2.0",
+  "author": "Crazy Marvin & Contributors (especially Yuran) <marvin@poopjournal.rocks> (https://crazymarvin.com/librelinkupdesktop/)",
+  "homepage": "https://github.com/Crazy-Marvin/LibreLinkUpDesktop",
+    "bugs": {
+    "url": "https://github.com/Crazy-Marvin/LibreLinkUpDesktop/issues",
+    "email": "marvin@poopjournal.rocks"
+  }
+    "funding": {
+    "type": "individual",
+    "url": "https://poopjournal.rocks/blog/donate/"
+  },
+  "keywords": [
+    "diabetes",
+    "librelink",
+    "librelinkup",
+    "blood sugar",
+    "health",
+    "desktop",
+    "electron"
+  ],
   "main": "./dist/main/main.js",
   "scripts": {
     "rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
