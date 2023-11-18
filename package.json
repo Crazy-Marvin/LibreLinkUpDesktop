@@ -86,7 +86,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.47.0",
-    "react-i18next": "^13.4.0",
+    "react-i18next": "^13.5.0",
     "react-router-dom": "^6.11.2",
     "sonner": "^1.1.0",
     "tailwind-merge": "^1.14.0",
