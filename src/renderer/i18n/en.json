@@ -10,9 +10,19 @@
   "Dark": "Dark",
   "Light": "Light",
 
+  "German": "German",
   "English": "English",
   "Sinhala": "Sinhala",
   "Norwegian": "Norwegian",
 
-  "Germany": "Germany"
+  "Germany": "Germany",
+  "European Union": "European Union",
+  "European Union 2": "European Union 2",
+  "United States": "United States",
+  "Asia/Pacific": "Asia/Pacific",
+  "Canada": "Canada",
+  "Japan": "Japan",
+  "United Arab Emirates": "United Arab Emirates",
+  "France": "France",
+  "Australia": "Australia"
 }
