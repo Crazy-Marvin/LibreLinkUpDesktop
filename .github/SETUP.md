@@ -30,6 +30,8 @@ A [release](https://github.com/Crazy-Marvin/LibreLinkUpDesktop/releases) should 
 - portable
 - pkg
 
+The ```version``` in the ```/release/app/package.json``` needs to be increased following the rules of [Semantic Versioning](https://semver.org/).
+
 ## Customizing the application
 
 - Localization is located on `src/renderer/i18n` folder.
