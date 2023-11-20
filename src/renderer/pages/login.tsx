@@ -1,5 +1,6 @@
 import * as z from "zod"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -35,6 +36,7 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -69,7 +71,9 @@ export default function LoginPage() {
       <div className="flex flex-col items-center p-12">
         <img className="mb-3" src={logo} width={80} />
         <h2 className="font-semibold text-2xl">LibreLinkUpDesktop</h2>
-        <p className="text-gray-400">This is a desktop application that fetches your blood sugar from LibreLinkUp</p>
+        <p className="text-gray-400">
+          {t('Welcome')}
+        </p>
       </div>
       <Form {...form}>
         <form
