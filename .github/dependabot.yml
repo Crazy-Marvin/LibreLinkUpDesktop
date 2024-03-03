@@ -3,7 +3,12 @@ updates:
 - package-ecosystem: npm
   directory: "/"
   schedule:
-    interval: monthly
+    interval: "monthly"
     time: "13:00"
   open-pull-requests-limit: 13
   versioning-strategy: increase
+  
+ - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
