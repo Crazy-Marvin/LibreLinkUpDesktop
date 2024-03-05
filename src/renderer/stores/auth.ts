@@ -23,7 +23,7 @@ const useAuthStore = create<AuthStore>()(
       setLanguage: (value) => set(() => ({ language: value })),
     }), {
       name: 'auth-storage',
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => localStorage),
     },
   )
 )
