@@ -5,6 +5,7 @@ import { app, BrowserWindow, ipcMain, shell } from "electron"
 // import log from "electron-log"
 import MenuBuilder from "./menu"
 import { resolveHtmlPath } from "./util"
+import { WindowStateManager, WindowState } from './windowState';
 
 // class AppUpdater {
 //   constructor() {
@@ -66,6 +67,14 @@ const createWindow = async () => {
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
   })
+
+  // 👉 save window state
+  const defaultWindowState: WindowState = {
+    width: 1024,
+    height: 728,
+  };
+  const windowStateManager = new WindowStateManager('main', defaultWindowState);
+  windowStateManager.manage(mainWindow);
 
   mainWindow.loadURL(resolveHtmlPath('index.html'))
 
