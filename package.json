@@ -165,7 +165,7 @@
     "webpack-merge": "^5.9.0"
   },
   "build": {
-    "productName": "LibreLinkUpDesktop",
+    "productName": "librelinkupdesktop",
     "appId": "com.sugarly.librelinkupdesktop",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
@@ -210,9 +210,33 @@
     },
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "snap",
+        "deb"
       ],
-      "category": "Development"
+      "icon": "assets/icon.icns",
+      "synopsis": "Fetches your blood sugar from LibreLinkUp",
+      "description": "This is a desktop application that fetches your blood sugar from LibreLinkUp. Developed by Crazy Marvin & Contributors, especially Yuran.",
+      "category": "Utility",
+      "mimeTypes": [
+        "application/x-librelinkup"
+      ],
+      "desktop": {
+        "Name": "LibreLinkUpDesktop",
+        "Comment": "Fetches your blood sugar from LibreLinkUp"
+      },
+      "executableArgs": []
+    },
+    "appImage": {
+      "artifactName": "${productName}-${version}-${arch}.AppImage"
+    },
+    "snap": {
+      "confinement": "strict",
+      "grade": "stable",
+      "artifactName": "${productName}-${version}-${arch}.snap"
+    },
+    "deb": {
+      "artifactName": "${productName}-${version}-${arch}.deb"
     },
     "directories": {
       "app": "release/app",
