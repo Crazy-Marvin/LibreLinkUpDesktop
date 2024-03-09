@@ -144,7 +144,7 @@
     "mini-css-extract-plugin": "^2.7.6",
     "npm-check-updates": "^16.14.15",
     "postcss-loader": "^7.3.3",
-    "prettier": "^2.8.8",
+    "prettier": "^3.2.5",
     "react-refresh": "^0.14.0",
     "react-test-renderer": "^18.2.0",
     "rimraf": "^5.0.1",
