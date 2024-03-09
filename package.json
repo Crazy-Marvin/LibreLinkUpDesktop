@@ -207,8 +207,29 @@
     },
     "win": {
       "target": [
-        "nsis"
-      ]
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "msi",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "appx",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
     },
     "linux": {
       "target": [
@@ -239,6 +260,28 @@
     },
     "deb": {
       "artifactName": "${productName}-${version}-${arch}.deb"
+    },
+    "nsis": {
+      "artifactName": "${productName}-${version}-${arch}-setup.exe",
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "LibreLinkUpDesktop"
+    },
+    "msi": {
+      "artifactName": "${productName}-${version}-${arch}.msi",
+      "shortcutName": "LibreLinkUpDesktop"
+    },
+    "appx": {
+      "backgroundColor": "#000000",
+      "displayName": "LibreLinkUpDesktop",
+      "identityName": "LibreLinkUpDesktop",
+      "publisher": "CN=Crazy Marvin and Contributors",
+      "publisherDisplayName": "Crazy Marvin and Contributors",
+      "artifactName": "${productName}-${version}-${arch}.appx"
     },
     "directories": {
       "app": "release/app",
