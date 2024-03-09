@@ -82,7 +82,7 @@
     "electron-log": "^5.1.1",
     "electron-updater": "^6.1.8",
     "framer-motion": "^11.0.8",
-    "i18next": "^23.10.0",
+    "i18next": "^23.10.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.0",
