@@ -23,7 +23,23 @@ const languages: DropdownConfigType[] = [
   { value: 'no', label: 'Norwegian' },
 ]
 
+const themes: DropdownConfigType[] = [
+  {
+    label: 'Dark',
+    value: 'dark',
+  },
+  {
+    label: 'Light',
+    value: 'light',
+  },
+  {
+    label: 'System',
+    value: 'system',
+  },
+];
+
 export {
   countries,
   languages,
+  themes,
 }

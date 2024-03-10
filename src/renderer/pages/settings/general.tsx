@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useAuthStore } from "@/stores/auth"
-import { countries, languages } from "@/config/app"
+import { countries, languages, themes } from "@/config/app"
 import { useTranslation } from "react-i18next"
 
 export default function SettingsGeneralPage() {
@@ -38,7 +38,19 @@ export default function SettingsGeneralPage() {
       <div className="grid grid-cols-3 gap-3">
         <div>
           <p className="text-foreground/30 text-xs mb-2">Theme</p>
-          <div className="border rounded-md">
+          <Select onValueChange={setAndRefreshTheme} defaultValue={theme ?? ''}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Theme" />
+            </SelectTrigger>
+            <SelectContent>
+              {themes.map(item => (
+                <SelectItem value={item.value} key={item.value}>
+                  {t(item.label)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* <div className="border rounded-md">
             <Button
               className={cn(theme === 'dark' ? 'bg-primary/10 border border-primary' : '')}
               variant="ghost"
@@ -60,7 +72,7 @@ export default function SettingsGeneralPage() {
             >
               {t('System')}
             </Button>
-          </div>
+          </div> */}
         </div>
         <div>
           <p className="text-foreground/30 text-xs mb-2">Country</p>
