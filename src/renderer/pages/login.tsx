@@ -25,6 +25,8 @@ import { Input } from "@/components/ui/input"
 import { getAuthToken } from "@/lib/linkup"
 import { countries, languages } from "@/config/app"
 import { useAuthStore } from "@/stores/auth"
+import { ButtonPopover } from "@/components/ui/button-popover"
+import { QuestionMarkIcon } from "@radix-ui/react-icons"
 import logo from "../../../assets/logo.png"
 
 const formSchema = z.object({
@@ -161,6 +163,56 @@ export default function LoginPage() {
           </div>
         </form>
       </Form>
+      <div className="relative w-full flex-grow overflow-hidden flex">
+        <ButtonPopover
+          className="rounded-lg p-5
+                  bg-popover text-card-foreground fill-current
+                  shadow-md
+                  mr-4
+                  max-w-[300px]
+             "
+          contentProps={{ side: 'top', align: 'center' }}
+        >
+          {{
+            trigger: (
+              <button className="ml-auto block mr-5 mb-5 mt-auto hover:bg-white/20 p-2 transition-all border-solid border-[1px] rounded-[20px]">
+                <QuestionMarkIcon className="h-4 w-4" />
+              </button>
+            ),
+            content: (
+              <div className="">
+                <p className="text font-medium my-2">How to get credentials</p>
+                <div>
+                  <ol className="list-decimal pl-4 text-sm">
+                    <li>
+                      As sharing person, open your{' '}
+                      <a
+                        href="https://play.google.com/store/apps/details?id=com.freestylelibre3.app.de"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        Libre smartphone app
+                      </a>
+                      , go to <em>Connected Apps</em>, click on <em>Manage</em>{' '}
+                      next to LibreLinkUp, click on <em>Add connection</em> and
+                      input the details for the account you wish to use with
+                      LibreLinkUpDesktop.
+                    </li>
+                    <li>
+                      Save those credentials inside your password manager. You
+                      may use them for yourself or you may share them with
+                      someone.
+                    </li>
+                    <li>Enter those credentials on this login page.</li>
+                    <li>That&apos;s it. 😄</li>
+                  </ol>
+                </div>
+              </div>
+            ),
+          }}
+        </ButtonPopover>
+      </div>
     </PublicLayout>
   )
 }
