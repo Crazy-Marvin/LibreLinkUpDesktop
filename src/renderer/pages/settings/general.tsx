@@ -13,6 +13,7 @@ import {
 import { useAuthStore } from "@/stores/auth"
 import { countries, languages } from "@/config/app"
 import { useTranslation } from "react-i18next"
+import { setRedirectTo } from "@/lib/utils"
 
 export default function SettingsGeneralPage() {
   const navigate = useNavigate()
@@ -26,7 +27,8 @@ export default function SettingsGeneralPage() {
   const { setTheme } = useTheme()
   const setAndRefreshTheme = (t: ThemeType) => {
     setTheme(t)
-    navigate('/dashboard')
+    setRedirectTo('/settings/general')
+    window.location.reload();
   }
   const setAndRefreshLanguage = (l: string) => {
     i18n.changeLanguage(l)
