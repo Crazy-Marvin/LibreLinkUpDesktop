@@ -7,6 +7,7 @@ import { GearIcon } from "@radix-ui/react-icons"
 import { useNavigate } from "react-router-dom"
 import { LoadingScreen } from "@/components/ui/loading"
 import { useClearSession } from "@/hooks/session"
+import { openNewWindow, setRedirectTo } from "@/lib/utils"
 
 export default function DashboardPage() {
   const { clearSession } = useClearSession()
@@ -49,6 +50,11 @@ export default function DashboardPage() {
     return () => clearInterval(interval)
   }, [])
 
+  const openSettings = (path: string) => {
+    setRedirectTo(path);
+    openNewWindow(path, 1024, 768)
+  }
+
   if (!isReady) {
     return <LoadingScreen />
   }
@@ -58,7 +64,7 @@ export default function DashboardPage() {
       className={`${getColor(graphData?.ValueInMgPerDl ?? 1)} flex justify-center items-center`}
     >
       <button
-        onClick={() => navigate('/settings/general')}
+        onClick={() => openSettings('/settings/general')}
         className="absolute top-5 right-5 hover:bg-white/20 p-2 rounded-md transition-all"
       >
         <GearIcon className="text-white h-6 w-6" />
