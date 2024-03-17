@@ -1,13 +1,20 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { PublicLayout } from "@/layouts/public-layout"
+import { clearRedirectTo, getRedirectTo } from "@/lib/utils"
 import logo from "../../../assets/logo.png"
 
 export default function LandingPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
+      const redirectTo = await getRedirectTo();
+      if (redirectTo) {
+        navigate(redirectTo)
+        clearRedirectTo();
+        return
+      }
       navigate('/login')
     }, 3000);
     return () => clearTimeout(timer);

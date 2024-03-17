@@ -38,12 +38,12 @@ export default function SettingsLayout({ children }: Props) {
     <BaseLayout
       className="px-3 py-9 flex flex-col"
     >
-      <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+      {/* <Button variant="ghost" onClick={() => navigate('/dashboard')}>
         <ArrowLeftIcon className="h-5 w-5 mr-3" />
         <p className="text-lg">
           {t('Settings')}
         </p>
-      </Button>
+      </Button> */}
       <div className="flex mt-3">
         <div className="w-[280px] flex flex-col gap-1">
           <SidebarButton

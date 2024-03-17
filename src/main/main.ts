@@ -6,7 +6,8 @@ import { app, BrowserWindow, ipcMain, shell } from "electron"
 import MenuBuilder from "./menu"
 import { resolveHtmlPath } from "./util"
 import { WindowStateManager, WindowState } from './windowState';
-
+import { registerWindowHandlers, destroyWindowHandlers } from "./windowHandler";
+import { registerLogoutHandler, destroyLogoutHandler } from "./logoutHandler";
 // class AppUpdater {
 //   constructor() {
 //     log.transports.file.level = 'info'
@@ -68,6 +69,8 @@ const createWindow = async () => {
     },
   })
 
+  mainWindow.isPrimary = true;
+
   // 👉 save window state
   const defaultWindowState: WindowState = {
     width: 1024,
@@ -112,6 +115,8 @@ const createWindow = async () => {
  */
 
 app.on('window-all-closed', () => {
+  destroyWindowHandlers();
+  destroyLogoutHandler();
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
   if (process.platform !== 'darwin') {
@@ -140,3 +145,7 @@ ipcMain.handle('ipc-open-file', async (event, ...args) => {
   const filePath = path.join(appPath, '..', 'assets', 'resources', ...args)
   shell.openPath(filePath)
 })
+
+
+registerWindowHandlers();
+registerLogoutHandler();

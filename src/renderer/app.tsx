@@ -5,9 +5,22 @@ import routes from "@/routes"
 import "@/globals.css"
 import "@/custom.css"
 import "@/i18n/config"
+import { useEffect } from "react"
 
 export default function App() {
   const token = useAuthStore((state) => state.token)
+
+  useEffect(() => {
+    const handleLogout = () => {
+      window.location.reload();
+    };
+
+    const unsubscribe = window.electron.ipcRenderer.on('logout-event', handleLogout);
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   return (
     <AnimatePresence>

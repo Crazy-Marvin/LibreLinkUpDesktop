@@ -1,3 +1,4 @@
+import { sendLogout } from "@/lib/utils"
 import { useAuthStore } from "@/stores/auth"
 import { useNavigate } from "react-router-dom"
 
@@ -8,6 +9,7 @@ export function useClearSession() {
   const clearSession = () => {
     logout()
     navigate('/')
+    sendLogout();
   }
 
   return {
