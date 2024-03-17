@@ -167,7 +167,7 @@
     "webpack-merge": "^5.9.0"
   },
   "build": {
-    "productName": "librelinkupdesktop",
+    "productName": "LibreLinkUpDesktop",
     "appId": "com.sugarly.librelinkupdesktop",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
