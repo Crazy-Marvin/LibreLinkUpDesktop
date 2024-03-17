@@ -167,7 +167,7 @@
     "webpack-merge": "^5.9.0"
   },
   "build": {
-    "productName": "librelinkupdesktop",
+    "productName": "LibreLinkUpDesktop",
     "appId": "com.sugarly.librelinkupdesktop",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
@@ -178,13 +178,13 @@
     ],
     "afterSign": ".erb/scripts/notarize.js",
     "mac": {
-      "target": {
-        "target": "default",
-        "arch": [
-          "arm64",
-          "x64"
-        ]
-      },
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        }
+      ],
+      "icon": "assets/icon.png",
       "type": "distribution",
       "hardenedRuntime": true,
       "entitlements": "assets/entitlements.mac.plist",
@@ -203,12 +203,34 @@
           "type": "link",
           "path": "/Applications"
         }
-      ]
+      ],
+      "artifactName": "${productName}-${version}-${arch}.dmg"
     },
     "win": {
       "target": [
-        "nsis"
-      ]
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "msi",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "appx",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
     },
     "linux": {
       "target": [
@@ -239,6 +261,28 @@
     },
     "deb": {
       "artifactName": "${productName}-${version}-${arch}.deb"
+    },
+    "nsis": {
+      "artifactName": "${productName}-${version}-${arch}-setup.exe",
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "LibreLinkUpDesktop"
+    },
+    "msi": {
+      "artifactName": "${productName}-${version}-${arch}.msi",
+      "shortcutName": "LibreLinkUpDesktop"
+    },
+    "appx": {
+      "backgroundColor": "#000000",
+      "displayName": "LibreLinkUpDesktop",
+      "identityName": "LibreLinkUpDesktop",
+      "publisher": "CN=Crazy Marvin and Contributors",
+      "publisherDisplayName": "Crazy Marvin and Contributors",
+      "artifactName": "${productName}-${version}-${arch}.appx"
     },
     "directories": {
       "app": "release/app",
