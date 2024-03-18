@@ -1,6 +1,6 @@
 import * as z from "zod"
 import { toast } from "sonner"
-import { useTranslation } from "react-i18next"
+import { useTranslation, Trans } from "react-i18next"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -38,7 +38,9 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
+  const setLanguage = useAuthStore((state) => state.setLanguage)
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -66,6 +68,11 @@ export default function LoginPage() {
     }
   }
 
+  const setAndRefreshLanguage = (l: string) => {
+    i18n.changeLanguage(l)
+    setLanguage(l)
+  }
+
   return (
     <PublicLayout
       className="flex flex-col justify-center items-center"
@@ -89,16 +96,16 @@ export default function LoginPage() {
                 name="language"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Language</FormLabel>
+                    <FormLabel>{ t('Language')}</FormLabel>
                     <FormControl>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={(e) => {field.onChange(e);  setAndRefreshLanguage(e) }} defaultValue={field.value}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Language" />
+                          <SelectValue placeholder={t('SelectLanguage')} />
                         </SelectTrigger>
                         <SelectContent>
                           {languages.map(language => (
                             <SelectItem value={language.value} key={language.value}>
-                              {language.label}
+                              {t(language.label)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -112,16 +119,16 @@ export default function LoginPage() {
                 name="country"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Country</FormLabel>
+                    <FormLabel>{ t('Country') }</FormLabel>
                     <FormControl>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Country" />
+                          <SelectValue placeholder={ t('SelectCountry') } />
                         </SelectTrigger>
                         <SelectContent>
                           {countries.map(country => (
                             <SelectItem value={country.value} key={country.value}>
-                              {country.label}
+                              { t(country.label) }
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -135,9 +142,9 @@ export default function LoginPage() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>{ t('Username')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Username" {...field} />
+                      <Input placeholder={ t('Username') } {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -148,9 +155,9 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{ t('Password') }</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Password" {...field} />
+                      <Input type="password" placeholder={ t('Password') } {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -158,7 +165,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="flex justify-center mt-20">
-              <Button type="submit" className="w-48">Log in</Button>
+              <Button type="submit" className="w-48">{ t('LogIn') }</Button>
             </div>
           </div>
         </form>
@@ -180,32 +187,18 @@ export default function LoginPage() {
               </button>
             ),
             content: (
-              <div className="">
-                <p className="text font-medium my-2">How to get credentials</p>
+              <div>
+                <p className="text font-medium my-2">{t('getCredentialsTitle')}</p>
                 <div>
                   <ol className="list-decimal pl-4 text-sm">
                     <li>
-                      As sharing person, open your{' '}
-                      <a
-                        href="https://play.google.com/store/apps/details?id=com.freestylelibre3.app.de"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        Libre smartphone app
-                      </a>
-                      , go to <em>Connected Apps</em>, click on <em>Manage</em>{' '}
-                      next to LibreLinkUp, click on <em>Add connection</em> and
-                      input the details for the account you wish to use with
-                      LibreLinkUpDesktop.
+                    <Trans i18nKey="getCredentialsStep1">
+          As sharing person, open your <a href={t('getCredentialsStep1Link')} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">Libre smartphone app</a>, go to <em>Connected Apps</em>, click on <em>Manage</em> next to LibreLinkUp, click on <em>Add connection</em> and input the details for the account you wish to use with LibreLinkUpDesktop.
+        </Trans>
                     </li>
-                    <li>
-                      Save those credentials inside your password manager. You
-                      may use them for yourself or you may share them with
-                      someone.
-                    </li>
-                    <li>Enter those credentials on this login page.</li>
-                    <li>That&apos;s it. 😄</li>
+                    <li>{t('getCredentialsStep2')}</li>
+                    <li>{t('getCredentialsStep3')}</li>
+                    <li>{t('getCredentialsStep4')}</li>
                   </ol>
                 </div>
               </div>
