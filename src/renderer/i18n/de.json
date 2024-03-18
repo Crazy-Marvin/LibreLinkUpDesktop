@@ -21,5 +21,18 @@
     "European Union 2": "Europäische Union 2",
     "German": "Deutsch",
     "Japan": "Japan",
-    "United Arab Emirates": "Vereinigte Arabische Emirate"
+    "United Arab Emirates": "Vereinigte Arabische Emirate",
+    "SelectCountry": "Land wählen",
+    "getCredentialsTitle": "Anmeldeinformationen erhalten",
+    "getCredentialsStep1Link": "https://play.google.com/store/apps/details?id=com.freestylelibre3.app.de",
+    "getCredentialsStep2": "Speichern Sie diese Anmeldedaten in Ihrem Passwort-Manager. Sie können sie für sich selbst verwenden oder sie an andere weitergeben.",
+    "getCredentialsStep3": "Geben Sie diese Anmeldedaten auf dieser Anmeldeseite ein.",
+    "getCredentialsStep4": "Das war's schon. 😄",
+    "Username": "Benutzername",
+    "Password": "Passwort",
+    "Login": "Anmelden",
+    "Country": "Land",
+    "Language": "Sprache",
+    "SelectLanguage": "Sprache wählen",
+    "getCredentialsStep1": "Öffnen Sie als teilende Person Ihre <1>Libre Smartphone-App</1>, gehen Sie zu <3>Verbundene Apps</3>, klicken Sie auf <5>Verwalten</5> neben LibreLinkUp, klicken Sie auf <7>Verbindung hinzufügen</7> und geben Sie die Details für das Konto ein, das Sie mit LibreLinkUpDesktop verwenden möchten."
 }
