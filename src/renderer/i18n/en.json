@@ -25,5 +25,20 @@
   "Japan": "Japan",
   "United Arab Emirates": "United Arab Emirates",
   "France": "France",
-  "Australia": "Australia"
+  "Australia": "Australia",
+
+  "getCredentialsTitle": "How to get credentials",
+  "getCredentialsStep1": "As sharing person, open your <1>Libre smartphone app</1>, go to <3>Connected Apps</3>, click on <5>Manage</5> next to LibreLinkUp, click on <7>Add connection</7> and input the details for the account you wish to use with LibreLinkUpDesktop.",
+  "getCredentialsStep1Link": "https://play.google.com/store/apps/details?id=com.freestylelibre3.app.de",
+  "getCredentialsStep2": "Save those credentials inside your password manager. You may use them for yourself or you may share them with someone.",
+  "getCredentialsStep3": "Enter those credentials on this login page.",
+  "getCredentialsStep4": "That's it. 😄",
+
+  "Username": "Username",
+  "Password": "Password",
+  "Login": "Log in",
+  "Country": "Country",
+  "Language": "Language",
+  "SelectCountry": "Select Country",
+  "SelectLanguage": "Select Language"
 }
