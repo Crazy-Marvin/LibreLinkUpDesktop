@@ -168,7 +168,7 @@
   },
   "build": {
     "productName": "LibreLinkUpDesktop",
-    "appId": "com.sugarly.librelinkupdesktop",
+    "appId": "rocks.poopjournal.librelinkupdesktop",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
     "files": [
