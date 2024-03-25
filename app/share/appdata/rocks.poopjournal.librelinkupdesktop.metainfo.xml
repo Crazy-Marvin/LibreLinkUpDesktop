@@ -1,0 +1,35 @@
+<name>LibreLinkUpDesktop</name>
+
+<summary>This is a desktop application that fetches your blood sugar from LibreLinkUp </summary>
+
+<developer id="rocks.poopjournal">
+  <name>Crazy Marvin & Contributors</name>
+</developer>
+
+<description>
+  <p>Some description</p>
+  <p xml:lang="de">Translated description</p>
+  <ul>
+    <li>A list</li>
+    <li xml:lang="de">Translated list</li>
+  </ul>
+</description>
+
+<screenshots>
+  <screenshot type="default">
+    <image>https://example.org/example1.png</image>
+    <image xml:lang="de">https://example.org/example1_de.png</image>
+    <caption>A caption</caption>
+    <caption xml:lang="de">Translated caption</caption>
+  </screenshot>
+</screenshots>
+
+<keywords>
+  <keyword translate="no">diabetes</keyword>
+  <keyword translate="no">librelink</keyword>
+  <keyword translate="no">librelinkup</keyword>
+  <keyword translate="no">blood sugar</keyword>
+  <keyword translate="no">health</keyword>
+  <keyword translate="no">desktop</keyword>
+  <keyword translate="no">electron</keyword>
+</keywords>
