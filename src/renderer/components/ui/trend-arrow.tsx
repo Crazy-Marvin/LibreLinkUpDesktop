@@ -2,6 +2,8 @@ import {
   ArrowDownIcon,
   ArrowRightIcon,
   ArrowUpIcon,
+  ArrowTopRightIcon,
+  ArrowBottomRightIcon
 } from "@radix-ui/react-icons"
 
 type Props = {
@@ -10,15 +12,19 @@ type Props = {
 }
 
 export function TrendArrow({ className, trend }: Props) {
-  // High
-  if (trend === 1) {
-    return (<ArrowUpIcon className={className} />)
-  }
-  // Same Level
-  if (trend === 3) {
-    return (<ArrowRightIcon className={className} />)
-  }
+  switch(trend)
+  {
+    case 1:
+      return (<ArrowDownIcon className={className} />)
+    case 2:
+      return (<ArrowBottomRightIcon className={className} />)
 
-  // Low
-  return (<ArrowDownIcon className={className} />)
+    case 4:
+      return (<ArrowTopRightIcon className={className} />)
+    case 5:
+      return (<ArrowUpIcon className={className} />)
+      
+    default:
+      return (<ArrowRightIcon className={className} />)
+  }
 }
