@@ -105,7 +105,7 @@
     "@svgr/webpack": "^8.0.1",
     "@teamsupercell/typings-for-css-modules-loader": "^2.5.2",
     "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^14.2.2",
+    "@testing-library/react": "^15.0.7",
     "@types/jest": "^29.5.2",
     "@types/node": "20.2.5",
     "@types/react": "^18.2.73",
