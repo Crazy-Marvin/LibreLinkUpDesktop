@@ -98,7 +98,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "@electron/notarize": "^2.3.0",
+    "@electron/notarize": "^2.3.2",
     "@electron/packager": "^18.3.2",
     "@electron/rebuild": "^3.6.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.13",
