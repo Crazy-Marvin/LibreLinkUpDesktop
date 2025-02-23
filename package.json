@@ -17,7 +17,7 @@
     "package-all": "ts-node ./.erb/scripts/clean.js dist && npm run build && electron-builder build -mwl --publish never",
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir release/app",
     "start": "ts-node ./.erb/scripts/check-port-in-use.js && npm run start:renderer",
-    "start:main": "cross-env NODE_ENV=development  TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.main.dev.ts && electronmon .",
+    "start:main": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.main.dev.ts && electronmon .",
     "start:preload": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.preload.dev.ts",
     "start:renderer": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack serve --config ./.erb/configs/webpack.config.renderer.dev.ts",
     "test": "jest"
@@ -317,25 +317,4 @@
     ],
     "logLevel": "quiet"
   }
-  {
-  {
-  "name": "libre-link-up-desktop",
-  "version": "1.0.0",
-  "scripts": {
-    "build": "webpack --config webpack.config.js"
-  },
-  "dependencies": {
-    "some-package": "^1.0.0"
-  },
-  "devDependencies": {
-    "eslint": "^8.57.1",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-erb": "^4.1.0"
-  }
-}
-
-  
-}
-
 }
