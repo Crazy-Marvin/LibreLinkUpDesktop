@@ -36,10 +36,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '16.x'
+          node-version: '16.x'  # Change the Node.js version if needed
           timeout-minutes: 10
 
-      - name: Install dependencies
+      - name: Retry Node.js setup
         run: |
           for i in {1..5}; do
             npm install --legacy-peer-deps && break || sleep 15;
