@@ -36,22 +36,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '16.x'  # Change the Node.js version if needed
+          node-version: '16.x'
           timeout-minutes: 10
 
       - name: Retry Node.js setup
+        shell: bash
         run: |
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            for ($i = 1; $i -le 5; $i++) {
-              npm install --legacy-peer-deps -ErrorAction SilentlyContinue
-              if ($LASTEXITCODE -eq 0) { break }
-              Start-Sleep -Seconds 15
-            }
-          else
-            for i in {1..5}; do
-              npm install --legacy-peer-deps && break || sleep 15;
-            done
-          fi
+          for i in {1..5}; do
+            npm install --legacy-peer-deps && break || sleep 15
+          done
 
       - name: Build
         run: npm run build
