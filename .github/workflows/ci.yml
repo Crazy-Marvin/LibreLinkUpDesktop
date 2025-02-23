@@ -13,6 +13,7 @@ jobs:
         if: runner.os != 'Windows'
         run: rm -rf ${{ runner.temp }}/* ${{ runner.tool_cache }}/*
 
+      
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -33,7 +34,7 @@ jobs:
           timeout-minutes: 10
 
       - name: Retry Node.js setup
-        run: 
+        run: |
           for i in {1..5}; do
             npm install --legacy-peer-deps && break || sleep 15;
           done
