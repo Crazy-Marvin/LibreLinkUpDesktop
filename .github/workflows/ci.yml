@@ -41,9 +41,17 @@ jobs:
 
       - name: Retry Node.js setup
         run: |
-          for i in {1..5}; do
-            npm install --legacy-peer-deps && break || sleep 15;
-          done
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            for ($i = 0; $i -lt 5; $i++) {
+              npm install --legacy-peer-deps -ErrorAction SilentlyContinue
+              if ($LASTEXITCODE -eq 0) { break }
+              Start-Sleep -Seconds 15
+            }
+          } else {
+            for i in {1..5}; do
+              npm install --legacy-peer-deps && break || sleep 15;
+            done
+          }
 
       - name: Build
         run: npm run build
