@@ -19,6 +19,12 @@ jobs:
         with:
           node-version: 20.9.0
 
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+           fetch-depth: 0  # Fetch all history for all branches and tags
+
+
       - name: Build/release Electron app
         uses: samuelmeuli/action-electron-builder@v1
         with:
