@@ -15,7 +15,9 @@ jobs:
 
       - name: Clear cache (Windows)
         if: runner.os == 'Windows'
-        run: Remove-Item -Recurse -Force "${{ runner.temp }}/*" "${{ runner.tool_cache }}/*"
+        run: |
+          Remove-Item -Recurse -Force "${{ runner.temp }}/*"
+          Remove-Item -Recurse -Force "${{ runner.tool_cache }}/*"
 
       - name: Checkout code
         uses: actions/checkout@v4
