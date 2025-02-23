@@ -49,4 +49,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact
-          path: ./dist................Run for i in {1..5}; do
+          path: ./dist
