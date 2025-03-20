@@ -68,5 +68,11 @@
     "Custom Alert Level": "Livello di avviso personalizzato",
     "Enter Value": "Inserisci valore",
     "Apply Changes": "Applica modifiche",
-    "Global": "Globale"
+    "Global": "Globale",
+    "Hindi": "Hindi",
+    "Portuguese": "Portoghese",
+    "Chinese": "Cinese",
+    "Show glucose values in tray": "Mostra i valori del glucosio nel vassoio",
+    "Japanese": "Giapponese",
+    "Bengali": "Bengalese"
 }
