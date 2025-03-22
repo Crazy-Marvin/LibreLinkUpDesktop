@@ -66,5 +66,13 @@
     "Alert": "Alerte",
     "ALERT_DESCRIPTION": "LibreLinkUpDesktop peut vous alerter lorsque votre glycémie est hors des limites normales. Choisissez votre mode d'alerte et ajustez les limites ci-dessous.",
     "Bring Window to Front": "Amener la fenêtre au premier plan",
-    "Flash Window": "Fenêtres Flash"
+    "Flash Window": "Fenêtres Flash",
+    "Show glucose values in tray": "Afficher les valeurs de glucose dans le plateau",
+    "Max Value": "Valeur maximale",
+    "Custom Alert Sound": "Son d'alerte personnalisé",
+    "Custom Alert Level": "Niveau d'alerte personnalisé",
+    "Min Value": "Valeur minimale",
+    "Upload Sound": "Télécharger du son",
+    "Enter Value": "Entrez la valeur",
+    "Apply Changes": "Appliquer les modifications"
 }
