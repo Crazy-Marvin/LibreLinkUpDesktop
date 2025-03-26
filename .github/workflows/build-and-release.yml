@@ -1,0 +1,129 @@
+name: Build And Release
+on:
+  push:
+    tags:
+      - 'v*'
+    pull_request:
+      types: [review_requested]
+jobs:
+  build_on_windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Node.js dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: windows-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            windows-node-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install --prefer-offline --legacy-peer-deps
+
+      - name: Build
+        run: npm run package
+
+      - name: List release folder
+        run: dir release/build/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        id: create_release
+        with:
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/build/*.exe
+            release/build/*.msi
+            release/build/*.appx
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build_on_ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Node.js dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ubuntu-node-${{ hashFiles('/package-lock.json') }}
+          restore-keys: |
+            ubuntu-node-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install --prefer-offline --legacy-peer-deps
+
+      - name: Build the Package
+        run: npm run package
+
+      - name: List release folder
+        run: ls -la release/build/
+
+      - name: Upload Ubuntu Release Artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/build/*.deb
+            release/build/*.snap
+            release/build/*.AppImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build_on_mac:
+    runs-on: macOS-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Node.js dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: mac-node-${{ hashFiles('/package-lock.json') }}
+          restore-keys: |
+            mac-node-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install --prefer-offline --legacy-peer-deps
+
+      - name: Build the Package
+        run: npm run package
+
+      - name: List release folder
+        run: ls -la release/build/
+
+      - name: Upload macOS Release Artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/build/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
