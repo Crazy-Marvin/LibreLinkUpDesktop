@@ -35,7 +35,7 @@ jobs:
         run: dir release/build/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         id: create_release
         with:
           name: ${{ github.ref_name }}
@@ -45,7 +45,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Artifacts
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             release/build/*.exe
@@ -83,7 +83,7 @@ jobs:
         run: ls -la release/build/
 
       - name: Upload Ubuntu Release Artifacts
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             release/build/*.deb
@@ -121,7 +121,7 @@ jobs:
         run: ls -la release/build/
 
       - name: Upload macOS Release Artifacts
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             release/build/*.dmg
