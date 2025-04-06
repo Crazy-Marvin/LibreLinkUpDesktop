@@ -52,6 +52,7 @@
   </keywords>
 
   <releases>
+    <release version="0.1.14" date="2025-04-06"/>
     <release version="0.1.13" date="2025-01-28"/>
     <release version="0.1.12" date="2025-01-12"/>
     <release version="0.1.11" date="2024-09-14"/>
