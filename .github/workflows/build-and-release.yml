@@ -57,6 +57,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Upload Windows Artifacts
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            release/build/*.exe
+            release/build/*.msi
+            release/build/*.appx
+            release/build/*-setup.exe
+
   build_on_ubuntu:
     runs-on: ubuntu-latest
     steps:
@@ -96,6 +107,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Upload Ubuntu Artifacts
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-artifacts
+          path: |
+            release/build/*.deb
+            release/build/*.snap
+            release/build/*.AppImage
+
   build_on_mac:
     runs-on: macOS-latest
     steps:
@@ -134,3 +155,13 @@ jobs:
             release/build/*-x64.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload macOS Artifacts (Non-Tag Builds)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: |
+            release/build/*.dmg
+            release/build/*-arm64.dmg
+            release/build/*-x64.dmg
