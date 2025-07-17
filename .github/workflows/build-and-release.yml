@@ -51,6 +51,7 @@ jobs:
             release/build/*.exe
             release/build/*.msi
             release/build/*.appx
+            release/build/*-setup.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -64,7 +65,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ubuntu-node-${{ hashFiles('/package-lock.json') }}
+          key: ubuntu-node-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ubuntu-node-
 
@@ -125,5 +126,7 @@ jobs:
         with:
           files: |
             release/build/*.dmg
+            release/build/*-arm64.dmg
+            release/build/*-x64.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
