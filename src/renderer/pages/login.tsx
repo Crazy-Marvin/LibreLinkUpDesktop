@@ -63,16 +63,34 @@ export default function LoginPage() {
       country: values.country,
       username: values.username,
       password: values.password,
-    })
+    }) as {
+      token?: string;
+      accountId?: string;
+      accountCountry?: string;
+      error?: number;
+    };
 
-    if (authData) {
+    if (authData && !authData.error) {
       const token = authData?.token || ''
       const accountId = authData?.accountId || ''
       const accountCountry = authData?.accountCountry || values.country
       login(token, accountCountry, values.language, accountId)
       navigate('/dashboard')
-    } else {
-      toast.error("Invalid credentials.")
+    } else if (authData?.error) {
+      if (authData.error === 4) {
+        toast.error(
+          'Privacy policy error',
+        );
+      } else if (authData.error === 2) {
+        toast.error(
+          'Invalid credentials - Please check your username and password.',
+        );
+      } else {
+        toast.error(authData.error || 'Authentication failed');
+      }
+    }
+    else{
+      toast.error("Error Occurred")
     }
   }
 

@@ -41,8 +41,8 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
         version: '4.12.0',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache',
-        'Accept-Encoding': 'gzip',
-        Connection: 'keep-alive',
+        // 'Accept-Encoding': 'gzip',
+        // Connection: 'keep-alive',
       },
     });
 
@@ -62,10 +62,16 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
           version: '4.12.0',
           Pragma: 'no-cache',
           'Cache-Control': 'no-cache',
-          'Accept-Encoding': 'gzip',
-          Connection: 'keep-alive',
+        // 'Accept-Encoding': 'gzip',
+        // Connection: 'keep-alive',
         },
       });
+    }
+    else{
+      return {
+        success: false,
+        error: response.data?.status || 999999
+      };
     }
 
     return {
