@@ -17,6 +17,7 @@ import {
   getUserUnit,
   getLocalStorageWindowMode,
   setWindowMode,
+  updateTrayNumber,
 } from '@/lib/utils';
 import { useGlucoseAlerts } from '@/hooks/useGlucoseAlerts';
 
@@ -121,6 +122,13 @@ export default function DashboardPage() {
       dispatchAlert(graphData.glucoseMeasurement.ValueInMgPerDl,graphData?.targetLow,graphData?.targetHigh);
     }
   }, [graphData])
+
+  useEffect(() => {
+    if (graphData?.glucoseMeasurement?.ValueInMgPerDl && token && country && accountId) {
+      const glucoseValue = getUserValue(graphData.glucoseMeasurement.ValueInMgPerDl);
+      updateTrayNumber(Math.round(glucoseValue));
+    }
+  }, [graphData, token, country, accountId]);
 
   if (!isReady) {
     return <LoadingScreen />;

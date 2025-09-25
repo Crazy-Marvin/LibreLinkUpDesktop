@@ -32,6 +32,7 @@ import { useEffect } from 'react';
 import {
   getLocalStorageWindowMode,
   setWindowMode,
+  initializeTrayAfterLogin,
 } from '@/lib/utils';
 
 const formSchema = z.object({
@@ -76,12 +77,14 @@ export default function LoginPage() {
       const accountCountry = authData?.accountCountry || values.country
       login(token, accountCountry, values.language, accountId)
       navigate('/dashboard')
+      await initializeTrayAfterLogin(token, accountCountry, accountId)
     } else if (authData?.error) {
       if (authData.error === 4) {
         toast.error(
           'Privacy policy error',
         );
       } else if (authData.error === 2) {
+         window.electron.ipcRenderer.sendMessage('update-tray-number', 600);
         toast.error(
           'Invalid credentials - Please check your username and password.',
         );

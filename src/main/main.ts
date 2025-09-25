@@ -11,7 +11,9 @@ import { registerWindowHandlers, destroyWindowHandlers } from "./windowHandler";
 import { registerLogoutHandler, destroyLogoutHandler } from "./logoutHandler";
 import { registerRefreshHandler, destroyRefreshHandler } from "./refreshHandler";
 import { registerAlertHandler, destroyAlertHandler } from "./alertHandler";
+import { registerTrayHandler, destroyTrayHandler, setTrayMainWindow } from "./trayHandler";
 
+const { createTray } = require('./../renderer/lib/trayManager');
 // class AppUpdater {
 //   constructor() {
 //     log.transports.file.level = 'info'
@@ -83,6 +85,9 @@ const createWindow = async () => {
     } else {
       mainWindow.show()
     }
+
+    createTray(mainWindow!);
+
   })
 
   mainWindow.on('closed', () => {
@@ -171,6 +176,7 @@ app.on('window-all-closed', () => {
   destroyLogoutHandler();
   destroyRefreshHandler();
   destroyAlertHandler();
+  destroyTrayHandler();
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
   if (process.platform !== 'darwin') {
@@ -205,5 +211,6 @@ registerWindowHandlers();
 registerLogoutHandler();
 registerRefreshHandler();
 registerAlertHandler();
+registerTrayHandler();
 
 export const getMainWindow = () => mainWindow;
