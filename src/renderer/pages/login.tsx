@@ -88,7 +88,7 @@ export default function LoginPage() {
           'Invalid credentials - Please check your username and password.',
         );
       } else {
-        toast.error(authData.error || 'Authentication failed');
+        toast.error('Authentication failed');
       }
     }
     else{
