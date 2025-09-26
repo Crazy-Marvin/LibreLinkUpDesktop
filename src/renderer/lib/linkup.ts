@@ -46,8 +46,8 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
       },
     });
 
-    if (response.data?.status === 0 && response.data?.data?.redirect) {
-      baseUrl = getBaseUrl(response.data.data.region);
+    if (response.data?.status === 0 ) {
+      baseUrl = getBaseUrl(response.data.data.user.country);
 
       response = await axios({
         method: 'post',
