@@ -119,8 +119,6 @@ export async function getCGMData(request: GetGeneralRequest): Promise<string|nul
       url: `/connections/${patientId}/graph`,
     })
 
-    console.log(graphResponse?.data?.data)
-
     return graphResponse?.data?.data?.connection
   } catch (error) {
     console.log('Unable to getCGMData: ', error)
