@@ -84,7 +84,6 @@ export default function LoginPage() {
           'Privacy policy error',
         );
       } else if (authData.error === 2) {
-         window.electron.ipcRenderer.sendMessage('update-tray-number', 600);
         toast.error(
           'Invalid credentials - Please check your username and password.',
         );

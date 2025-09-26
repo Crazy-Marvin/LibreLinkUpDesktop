@@ -117,8 +117,9 @@ export async function getGlucoseValueForTray(token: string, country: string, acc
 }
 
 export function updateTrayNumber(number: number) {
+  const { resultUnit } = useAuthStore.getState();
   if (window.electron?.ipcRenderer) {
-    window.electron.ipcRenderer.sendMessage('update-tray-number', number);
+    window.electron.ipcRenderer.sendMessage('update-tray-number', number, resultUnit);
   }
 }
 

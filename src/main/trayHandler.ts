@@ -8,11 +8,11 @@ export const registerTrayHandler = () => {
   ipcMain.on('update-tray-number', (event, number: number) => {
 
     try {
-      updateTrayNumber(number);
+      updateTrayNumber(number, unit);
     } catch (error) {
       if (mainWindow) {
         createTray(mainWindow);
-        updateTrayNumber(number);
+        updateTrayNumber(number, unit);
       }
     }
   });

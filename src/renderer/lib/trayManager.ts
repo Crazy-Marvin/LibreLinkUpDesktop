@@ -3,6 +3,7 @@ import { Tray, Menu, nativeImage, BrowserWindow } from 'electron';
 let tray: Tray | null = null;
 let currentNumber: number = 0;
 let mainWindow: BrowserWindow | null = null;
+let currentUnit: string = '';
 
 interface PixelCoordinates {
   x: number;
@@ -23,7 +24,7 @@ function createTray(window: BrowserWindow): void {
   tray = new Tray(trayIcon);
 
   updateTrayContextMenu();
-  tray.setToolTip(`Blood Sugar: ${currentNumber}`);
+  tray.setToolTip(`Blood Sugar: ${currentNumber} ${currentUnit}`);
 
   tray.on('click', () => {
     if (mainWindow) {
@@ -245,16 +246,17 @@ function setPixel(buffer: Buffer, size: number, x: number, y: number, color: RGB
   }
 }
 
-function updateTrayNumber(newNumber: number): void {
+function updateTrayNumber(newNumber: number,  unit: string): void {
   if (newNumber < 0) newNumber = 0;
   if (newNumber > 999) newNumber = 999;
 
   currentNumber = newNumber;
+  currentUnit = unit;
 
   if (tray) {
     const newIcon = createTrayIconWithNumber(newNumber);
     tray.setImage(newIcon);
-    tray.setToolTip(`Blood Sugar: ${newNumber}`);
+    tray.setToolTip(`Blood Sugar: ${newNumber} ${currentUnit}`);
 
     // Update context menu to show current number
     updateTrayContextMenu();
@@ -271,7 +273,7 @@ function updateTrayContextMenu(): void {
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: `Blood Sugar: ${currentNumber}`,
+      label: `Blood Sugar: ${currentNumber} ${currentUnit}`,
       enabled: false
     },
     { type: 'separator' },
