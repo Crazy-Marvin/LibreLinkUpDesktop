@@ -73,9 +73,6 @@ class TrayManager {
     targetLow?: number,
     targetHigh?: number,
   ): void {
-    console.log(
-      `updateTrayNumber called with: ${newNumber}, ${unit}, targets: ${targetLow}-${targetHigh}`,
-    );
 
     const clampedNumber = this.clampNumber(newNumber);
     this.state.currentNumber = clampedNumber;
@@ -109,7 +106,6 @@ class TrayManager {
     try {
       const trayIcon = this.createTrayIconWithNumber(this.state.currentNumber);
       this.createTrayInstance(trayIcon);
-      console.log('Ubuntu tray created successfully with number display');
     } catch (error) {
       console.error(
         'Failed to create Ubuntu tray with numbers, trying fallback:',
@@ -123,7 +119,6 @@ class TrayManager {
     try {
       const simpleIcon = this.createSimpleNumberIcon();
       this.createTrayInstance(simpleIcon);
-      console.log('Ubuntu fallback tray created');
     } catch (error) {
       console.error('Failed to create Ubuntu fallback tray:', error);
       this.createBasicTray();
