@@ -12,8 +12,8 @@ import { registerLogoutHandler, destroyLogoutHandler } from "./logoutHandler";
 import { registerRefreshHandler, destroyRefreshHandler } from "./refreshHandler";
 import { registerAlertHandler, destroyAlertHandler } from "./alertHandler";
 import { registerTrayHandler, destroyTrayHandler, setTrayMainWindow } from "./trayHandler";
+import { createTray, updateTrayNumber } from './../renderer/lib/trayManager';
 
-const { createTray } = require('./../renderer/lib/trayManager');
 // class AppUpdater {
 //   constructor() {
 //     log.transports.file.level = 'info'
@@ -23,6 +23,7 @@ const { createTray } = require('./../renderer/lib/trayManager');
 // }
 
 let mainWindow: BrowserWindow | null = null
+let trayCreated = false
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support')
@@ -86,7 +87,10 @@ const createWindow = async () => {
       mainWindow.show()
     }
 
-    createTray(mainWindow!);
+    if (!trayCreated) {
+      createTray(mainWindow);
+      trayCreated = true;
+    }
 
   })
 

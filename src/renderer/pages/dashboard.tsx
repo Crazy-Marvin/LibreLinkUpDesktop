@@ -126,7 +126,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (graphData?.glucoseMeasurement?.ValueInMgPerDl && token && country && accountId) {
       const glucoseValue = getUserValue(graphData.glucoseMeasurement.ValueInMgPerDl);
-      updateTrayNumber(Math.round(glucoseValue));
+      const targetLow = graphData?.targetLow ?? 70;
+      const targetHigh = graphData?.targetHigh ?? 180;
+
+      updateTrayNumber(Math.round(glucoseValue), targetLow, targetHigh);
     }
   }, [graphData, token, country, accountId]);
 

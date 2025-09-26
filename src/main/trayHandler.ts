@@ -5,14 +5,14 @@ let mainWindow: BrowserWindow | null = null;
 
 export const registerTrayHandler = () => {
 
-  ipcMain.on('update-tray-number', (event, number: number) => {
-
+  ipcMain.on('update-tray-number', (event, number: number, unit: string, targetLow?: number, targetHigh?: number) => {
     try {
-      updateTrayNumber(number, unit);
+      updateTrayNumber(number, unit, targetLow, targetHigh);
     } catch (error) {
+      console.error('Error updating tray number:', error);
       if (mainWindow) {
         createTray(mainWindow);
-        updateTrayNumber(number, unit);
+        updateTrayNumber(number, unit, targetLow, targetHigh);
       }
     }
   });

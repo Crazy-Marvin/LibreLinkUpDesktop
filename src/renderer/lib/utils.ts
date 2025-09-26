@@ -116,17 +116,22 @@ export async function getGlucoseValueForTray(token: string, country: string, acc
   }
 }
 
-export function updateTrayNumber(number: number) {
+export function updateTrayNumber(number: number, targetLow?: number, targetHigh?: number) {
   const { resultUnit } = useAuthStore.getState();
   if (window.electron?.ipcRenderer) {
-    window.electron.ipcRenderer.sendMessage('update-tray-number', number, resultUnit);
+    window.electron.ipcRenderer.sendMessage('update-tray-number', number, resultUnit, targetLow, targetHigh);
   }
 }
 
 export async function initializeTrayAfterLogin(token: string, country: string, accountId: string) {
   try {
-    const glucoseValue = await getGlucoseValueForTray(token, country, accountId);
-    updateTrayNumber(glucoseValue);
+    const data = await getCGMData({ token, country, accountId });
+    if (data?.glucoseMeasurement?.ValueInMgPerDl) {
+      const glucoseValue = getUserValue(data.glucoseMeasurement.ValueInMgPerDl);
+      const targetLow = data?.targetLow ?? 70;
+      const targetHigh = data?.targetHigh ?? 180;
+      updateTrayNumber(Math.round(glucoseValue), targetLow, targetHigh);
+    }
   } catch (error) {
     console.error('Failed to initialize tray:', error);
   }
