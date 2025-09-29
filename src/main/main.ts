@@ -87,11 +87,8 @@ const createWindow = async () => {
       mainWindow.show()
     }
 
-    if (!trayCreated) {
-      createTray(mainWindow);
-      trayCreated = true;
-    }
-
+    setTrayMainWindow(mainWindow);
+    
   })
 
   mainWindow.on('closed', () => {

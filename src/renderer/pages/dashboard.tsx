@@ -92,9 +92,10 @@ export default function DashboardPage() {
   useEffect(() => {
     const initializeTray = () => {
       const visibility = getTrayVisibility();
-      setTrayVisible(visibility);
-
-      if (!visibility) {
+      
+      if (visibility) {
+        setTrayVisibility(true);
+      } else {
         setTrayVisibility(false);
       }
     };
