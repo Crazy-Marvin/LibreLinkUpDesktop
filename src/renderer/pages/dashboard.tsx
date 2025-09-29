@@ -18,6 +18,8 @@ import {
   getLocalStorageWindowMode,
   setWindowMode,
   updateTrayNumber,
+  getTrayVisibility,
+  setTrayVisibility,
 } from '@/lib/utils';
 import { useGlucoseAlerts } from '@/hooks/useGlucoseAlerts';
 
@@ -32,6 +34,7 @@ export default function DashboardPage() {
   const accountId = useAuthStore((state) => state.accountId);
   const [graphData, setGraphData] = useState({});
   const [isReady, setIsReady] = useState(false);
+  const [trayVisible, setTrayVisible] = useState<boolean>(true);
 
   const populateGraphData = async () => {
     try {
@@ -84,6 +87,19 @@ export default function DashboardPage() {
     }, 1000 * 60);
 
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const initializeTray = () => {
+      const visibility = getTrayVisibility();
+      setTrayVisible(visibility);
+
+      if (!visibility) {
+        setTrayVisibility(false);
+      }
+    };
+
+    initializeTray();
   }, []);
 
   const openSettings = (path: string) => {
@@ -162,8 +178,6 @@ export default function DashboardPage() {
           className="absolute 2xs:top-2 2xs:right-2 md:top-5 md:right-5 right-0 top-0 outline-none hover:bg-white/20 p-2 rounded-md transition-all no-draggable"
         >
           <div className=''>
-          {/* <EnterFullScreenIcon className="text-white 2xs:h-6 2xs:w-6 w-4 h-4 outline-1" /> */}
-          {/* Use a custom svg icon to just to add a shadow to the icon */}
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white 2xs:h-6 2xs:w-6 w-4 h-4">
             <defs>
               <filter id="pathShadow" x="-50%" y="-50%" width="200%" height="200%">

@@ -1,5 +1,6 @@
 import { ThemeType, useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
+import { ToggleSwitch } from "@/components/ui/toggle-switch"
 import SettingsLayout from "@/layouts/settings-layout"
 import { cn } from "@/lib/utils"
 import { useNavigate } from "react-router-dom"
@@ -13,8 +14,8 @@ import {
 import { useAuthStore } from "@/stores/auth"
 import { countries, languages, themes, resultUnits, windowModes } from "@/config/app"
 import { useTranslation } from "react-i18next"
-import { setRedirectTo, sendRefreshPrimaryWindow, setWindowMode, getLocalStorageWindowMode } from "@/lib/utils"
-import { useEffect, useState } from 'react';
+import { setRedirectTo, sendRefreshPrimaryWindow, setWindowMode, getLocalStorageWindowMode, getTrayVisibility, setTrayVisibility} from "@/lib/utils"
+import { useEffect, useState, useCallback  } from 'react';
 
 export default function SettingsGeneralPage() {
   const navigate = useNavigate()
@@ -56,6 +57,24 @@ export default function SettingsGeneralPage() {
     };
     fetchWindowMode();
   }, []);
+
+  const [trayVisible, setTrayVisible] = useState<boolean>(true);
+
+  useEffect(() => {
+    const initializeTrayVisibility = () => {
+      const visibility = getTrayVisibility();
+      setTrayVisible(visibility);
+    };
+
+    initializeTrayVisibility();
+  }, []);
+
+  const handleToggleTray = useCallback(async (checked: boolean) => {
+    setTrayVisible(checked);
+    await setTrayVisibility(checked);
+  }, []);
+
+  const toggleSwitchKey = `tray-toggle-${trayVisible}`;
 
   return (
     <SettingsLayout>
@@ -134,6 +153,19 @@ export default function SettingsGeneralPage() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div>
+          <p className="text-foreground/30 text-xs mb-2">&nbsp;</p>
+          <div className="flex items-center justify-between rounded-md border px-3 py-1.5">
+            <span className="text-sm leading-none"> {t('Show glucose values in tray')} </span>
+            <div className="scale-90 origin-right">
+              <ToggleSwitch
+                key={toggleSwitchKey}
+                checked={trayVisible}
+                onChange={handleToggleTray}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </SettingsLayout>

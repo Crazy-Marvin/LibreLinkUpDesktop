@@ -117,6 +117,9 @@ export async function getGlucoseValueForTray(token: string, country: string, acc
 }
 
 export function updateTrayNumber(number: number, targetLow?: number, targetHigh?: number) {
+  const trayVisible = localStorage.getItem('trayVisible') !== '0';
+  if (!trayVisible) return;
+
   const { resultUnit } = useAuthStore.getState();
   if (window.electron?.ipcRenderer) {
     window.electron.ipcRenderer.sendMessage('update-tray-number', number, resultUnit, targetLow, targetHigh);
@@ -136,3 +139,30 @@ export async function initializeTrayAfterLogin(token: string, country: string, a
     console.error('Failed to initialize tray:', error);
   }
 }
+
+export const getTrayVisibility = (): boolean => {
+  const trayVisible = localStorage.getItem('trayVisible');
+  return trayVisible !== '0';
+};
+
+export const setTrayVisibility = async (visible: boolean) => {
+  localStorage.setItem('trayVisible', visible ? '1' : '0');
+
+  if (visible) {
+    await window.electron.ipcRenderer.sendMessage('create-tray');
+
+    const { token, country, accountId } = useAuthStore.getState();
+    if (token && country && accountId) {
+      try {
+        const glucoseValue = await getGlucoseValueForTray(token, country, accountId);
+        if (glucoseValue > 0) {
+          updateTrayNumber(glucoseValue, getUserUnit());
+        }
+      } catch (error) {
+        console.error('Failed to update tray with glucose value:', error);
+      }
+    }
+  } else {
+    await window.electron.ipcRenderer.sendMessage('destroy-tray');
+  }
+};

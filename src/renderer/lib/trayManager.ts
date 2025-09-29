@@ -73,6 +73,13 @@ class TrayManager {
     }
   }
 
+  public destroyTray(): void {
+    if (this.state.tray) {
+      this.state.tray.destroy();
+      this.state.tray = null;
+    }
+  }
+
   public updateTrayNumber(
     newNumber: number,
     unit: string,
@@ -678,3 +685,4 @@ export const updateTrayNumber = (
 ) => trayManager.updateTrayNumber(newNumber, unit, targetLow, targetHigh);
 export const updateTrayTargets = (targetLow: number, targetHigh: number) =>
   trayManager.updateTargets(targetLow, targetHigh);
+export const destroyTray = () => trayManager.destroyTray();
