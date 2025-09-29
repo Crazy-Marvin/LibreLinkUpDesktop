@@ -4,6 +4,10 @@ import { Tray, Menu, nativeImage, BrowserWindow } from 'electron';
 const TRAY_ICON_SIZE = 16;
 const MAX_DISPLAY_NUMBER = 999;
 const MIN_DISPLAY_NUMBER = 0;
+const CORNER_RADIUS = 3;
+
+const LOW = 55;  // Hypoglycemia threshold (mg/dL)
+const HIGH = 250; // Hyperglycemia threshold (mg/dL)
 
 // Interfaces
 interface PixelCoordinates {
@@ -23,6 +27,8 @@ interface TrayManagerState {
   currentNumber: number;
   mainWindow: BrowserWindow | null;
   currentUnit: string;
+  targetLow: number;
+  targetHigh: number;
 }
 
 // Tray Manager Class
@@ -77,7 +83,6 @@ class TrayManager {
     this.state.currentNumber = clampedNumber;
     this.state.currentUnit = unit;
 
-    // Update targets if provided
     if (targetLow !== undefined && targetHigh !== undefined) {
       this.state.targetLow = targetLow;
       this.state.targetHigh = targetHigh;
@@ -91,7 +96,6 @@ class TrayManager {
     }
   }
 
-  // Private methods
   private clampNumber(number: number): number {
     return Math.max(MIN_DISPLAY_NUMBER, Math.min(MAX_DISPLAY_NUMBER, number));
   }
@@ -192,7 +196,7 @@ class TrayManager {
 
     // Convert targets to mmol/L if current unit is mmol/L
     if (this.state.currentUnit === 'mmol/L') {
-      targetLow = Math.round((targetLow / 18) * 10) / 10; // Convert and round to 1 decimal
+      targetLow = Math.round((targetLow / 18) * 10) / 10;
       targetHigh = Math.round((targetHigh / 18) * 10) / 10;
       targetUnit = 'mmol/L';
     }
@@ -247,8 +251,7 @@ class TrayManager {
     const bgColor = this.getBackgroundColorForGlucoseLevel(
       this.state.currentNumber,
     );
-    bgColor.a = 220;
-    this.fillBufferWithColor(buffer, bgColor);
+    this.fillRoundedRectangle(buffer, bgColor);
 
     this.drawSimplifiedNumber(buffer, this.state.currentNumber);
 
@@ -257,16 +260,12 @@ class TrayManager {
       height: TRAY_ICON_SIZE,
     });
   }
+
   private createBasicIcon(): Electron.NativeImage {
     const buffer = Buffer.alloc(TRAY_ICON_SIZE * TRAY_ICON_SIZE * 4);
 
-    // Fill with a visible color
-    for (let i = 0; i < buffer.length; i += 4) {
-      buffer[i] = 70; // R
-      buffer[i + 1] = 130; // G
-      buffer[i + 2] = 200; // B
-      buffer[i + 3] = 255; // A
-    }
+    const bgColor: RGBAColor = { r: 70, g: 130, b: 200, a: 255 };
+    this.fillRoundedRectangle(buffer, bgColor);
 
     return nativeImage.createFromBuffer(buffer, {
       width: TRAY_ICON_SIZE,
@@ -280,53 +279,103 @@ class TrayManager {
 
   private fillBackground(buffer: Buffer, number: number): void {
     const bgColor = this.getBackgroundColorForGlucoseLevel(number);
-    this.fillBufferWithColor(buffer, bgColor);
+    this.fillRoundedRectangle(buffer, bgColor);
   }
 
-  private fillBufferWithColor(buffer: Buffer, color: RGBAColor): void {
+  private fillRoundedRectangle(buffer: Buffer, color: RGBAColor): void {
+    const width = TRAY_ICON_SIZE;
+    const height = TRAY_ICON_SIZE;
+    const radius = CORNER_RADIUS;
+
     for (let i = 0; i < buffer.length; i += 4) {
-      buffer[i] = color.r;
-      buffer[i + 1] = color.g;
-      buffer[i + 2] = color.b;
-      buffer[i + 3] = color.a ?? 255;
+      buffer[i] = 0;
+      buffer[i + 1] = 0;
+      buffer[i + 2] = 0;
+      buffer[i + 3] = 0;
+    }
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        let isInside = true;
+
+        if (x < radius && y < radius) {
+          const dx = radius - x;
+          const dy = radius - y;
+          isInside = (dx * dx + dy * dy) <= (radius * radius);
+        } else if (x >= width - radius && y < radius) {
+          const dx = x - (width - radius - 1);
+          const dy = radius - y;
+          isInside = (dx * dx + dy * dy) <= (radius * radius);
+        } else if (x < radius && y >= height - radius) {
+          const dx = radius - x;
+          const dy = y - (height - radius - 1);
+          isInside = (dx * dx + dy * dy) <= (radius * radius);
+        } else if (x >= width - radius && y >= height - radius) {
+          const dx = x - (width - radius - 1);
+          const dy = y - (height - radius - 1);
+          isInside = (dx * dx + dy * dy) <= (radius * radius);
+        }
+
+        if (isInside) {
+          const index = (y * width + x) * 4;
+          buffer[index] = color.r;
+          buffer[index + 1] = color.g;
+          buffer[index + 2] = color.b;
+          buffer[index + 3] = color.a ?? 255;
+        }
+      }
     }
   }
 
   // Color utility methods
-private getBackgroundColorForGlucoseLevel(level: number): RGBAColor {
-  let targetLow = this.state.targetLow;
-  let targetHigh = this.state.targetHigh;
+  private getBackgroundColorForGlucoseLevel(level: number): RGBAColor {
+    let targetLow = this.state.targetLow;
+    let targetHigh = this.state.targetHigh;
+    let lowThreshold = LOW;
+    let highThreshold = HIGH;
 
-  if (this.state.currentUnit === 'mmol/L') {
-    targetLow = targetLow / 18;
-    targetHigh = targetHigh / 18;
+    if (this.state.currentUnit === 'mmol/L') {
+      targetLow = targetLow / 18;
+      targetHigh = targetHigh / 18;
+      lowThreshold = LOW / 18;
+      highThreshold = HIGH / 18;
+    }
+
+    if (level < lowThreshold) {
+      return { r: 68, g: 68, b: 255, a: 255 };
+    }
+
+    if (level > highThreshold) {
+      return { r: 22, g: 100, b: 249, a: 255 };
+    }
+
+    if (
+      (level < targetLow && level >= lowThreshold) ||
+      (level > targetHigh && level <= highThreshold)
+    ) {
+      return { r: 11, g: 200, b: 245, a: 255 };
+    }
+
+    return { r: 94, g: 197, b: 34, a: 255 };
   }
 
-  // Use fully opaque colors
- if (level < targetLow) return { r: 220, g: 80, b: 80, a: 255 };     // Darker red
-  if (level > targetHigh) return { r: 220, g: 150, b: 50, a: 255 };   // Darker orange
-  return { r: 80, g: 220, b: 80, a: 255 };                                                 // Light green
+private getColorForGlucoseLevel(level: number): RGBAColor {
+  const scale = this.state.currentUnit === 'mmol/L' ? 1 / 18 : 1;
+
+  const targetLow  = this.state.targetLow  * scale;
+  const targetHigh = this.state.targetHigh * scale;
+  const lowTh      = LOW  * scale;
+  const highTh     = HIGH * scale;
+
+  const inWarning =
+    (level >= lowTh && level < targetLow) ||
+    (level >  targetHigh && level <= highTh);
+
+  return inWarning
+    ? { r: 0,   g: 0,   b: 0,   a: 255 }
+    : { r: 255, g: 255, b: 255, a: 255 };
 }
 
-  // private getColorForGlucoseLevel(level: number): RGBAColor {
-  //   let targetLow = this.state.targetLow;
-  //   let targetHigh = this.state.targetHigh;
-
-  //   // Convert targets to mmol/L scale if current unit is mmol/L
-  //   if (this.state.currentUnit === 'mmol/L') {
-  //     targetLow = targetLow / 18;
-  //     targetHigh = targetHigh / 18;
-  //   }
-
-  //   if (level < targetLow) return { r: 255, g: 200, b: 200, a: 255 }; // Light red
-  //   if (level > targetHigh) return { r: 255, g: 220, b: 150, a: 255 }; // Light orange
-  //   return { r: 200, g: 255, b: 200, a: 255 }; // Light green
-  // }
-
-  private getColorForGlucoseLevel(level: number): RGBAColor {
-    // Always return white for text color for better contrast
-    return { r: 255, g: 255, b: 255, a: 255 };
-  }
 
   // Drawing methods
   private drawNumber(buffer: Buffer, number: number): void {
@@ -347,73 +396,17 @@ private getBackgroundColorForGlucoseLevel(level: number): RGBAColor {
 
   private drawSimplifiedNumber(buffer: Buffer, number: number): void {
     const numStr = number > MAX_DISPLAY_NUMBER ? '999' : number.toString();
-    const color = this.getColorForGlucoseLevel(number);
+    const color = this.getColorForGlucoseLevel(60);
 
     if (numStr.length === 1) {
-      this.drawBoldDigit(buffer, parseInt(numStr), 4, color);
+      this.drawSingleDigit(buffer, parseInt(numStr), 5, color);
     } else if (numStr.length === 2) {
-      this.drawBoldDigit(buffer, parseInt(numStr[0]), 1, color);
-      this.drawBoldDigit(buffer, parseInt(numStr[1]), 8, color);
+      this.drawSingleDigit(buffer, parseInt(numStr[0]), 2, color);
+      this.drawSingleDigit(buffer, parseInt(numStr[1]), 8, color);
     } else if (numStr.length === 3) {
-      this.drawBoldDigit(buffer, parseInt(numStr[0]), 0, color);
-      this.drawBoldDigit(buffer, parseInt(numStr[1]), 5, color);
-      this.drawBoldDigit(buffer, parseInt(numStr[2]), 10, color);
-    }
-  }
-
-  private drawBoldDigit(
-    buffer: Buffer,
-    digit: number,
-    xOffset: number,
-    color: RGBAColor,
-  ): void {
-    switch (digit) {
-      case 1:
-        // Bold 1
-        for (let y = 3; y <= 10; y++) {
-          this.setPixel(buffer, xOffset + 2, y, color);
-          if (y >= 9) {
-            this.setPixel(buffer, xOffset + 1, y, color);
-            this.setPixel(buffer, xOffset + 3, y, color);
-          }
-        }
-        break;
-      case 2:
-        // Bold 2
-        const pixels2 = [
-          { x: xOffset + 1, y: 3 },
-          { x: xOffset + 2, y: 3 },
-          { x: xOffset + 3, y: 4 },
-          { x: xOffset + 3, y: 5 },
-          { x: xOffset + 2, y: 6 },
-          { x: xOffset + 1, y: 7 },
-          { x: xOffset, y: 8 },
-          { x: xOffset, y: 9 },
-          { x: xOffset + 1, y: 9 },
-          { x: xOffset + 2, y: 9 },
-          { x: xOffset + 3, y: 9 },
-        ];
-        pixels2.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
-        break;
-      case 3:
-        // Bold 3
-        const pixels3 = [
-          { x: xOffset + 1, y: 3 },
-          { x: xOffset + 2, y: 3 },
-          { x: xOffset + 3, y: 4 },
-          { x: xOffset + 3, y: 5 },
-          { x: xOffset + 1, y: 6 },
-          { x: xOffset + 2, y: 6 },
-          { x: xOffset + 3, y: 7 },
-          { x: xOffset + 3, y: 8 },
-          { x: xOffset + 1, y: 9 },
-          { x: xOffset + 2, y: 9 },
-        ];
-        pixels3.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
-        break;
-      default:
-        this.drawSingleDigit(buffer, digit, xOffset, color);
-        break;
+      this.drawSingleDigit(buffer, parseInt(numStr[0]), 0, color);
+      this.drawSingleDigit(buffer, parseInt(numStr[1]), 5, color);
+      this.drawSingleDigit(buffer, parseInt(numStr[2]), 10, color);
     }
   }
 
@@ -481,23 +474,16 @@ private getBackgroundColorForGlucoseLevel(level: number): RGBAColor {
     this.drawSingleDigit(buffer, digit3, 10, color);
   }
 
-  // Individual digit drawing methods (keep the same implementation)
+  // Individual digit drawing methods
   private drawDigit0(buffer: Buffer, xOffset: number, color: RGBAColor): void {
     const pixels: PixelCoordinates[] = [
-      { x: xOffset + 1, y: 4 },
-      { x: xOffset + 2, y: 4 },
-      { x: xOffset, y: 5 },
-      { x: xOffset + 3, y: 5 },
-      { x: xOffset, y: 6 },
-      { x: xOffset + 3, y: 6 },
-      { x: xOffset, y: 7 },
-      { x: xOffset + 3, y: 7 },
-      { x: xOffset, y: 8 },
-      { x: xOffset + 3, y: 8 },
-      { x: xOffset, y: 9 },
-      { x: xOffset + 3, y: 9 },
-      { x: xOffset + 1, y: 10 },
-      { x: xOffset + 2, y: 10 },
+      { x: xOffset + 1, y: 4 }, { x: xOffset + 2, y: 4 },
+      { x: xOffset, y: 5 }, { x: xOffset + 3, y: 5 },
+      { x: xOffset, y: 6 }, { x: xOffset + 3, y: 6 },
+      { x: xOffset, y: 7 }, { x: xOffset + 3, y: 7 },
+      { x: xOffset, y: 8 }, { x: xOffset + 3, y: 8 },
+      { x: xOffset, y: 9 }, { x: xOffset + 3, y: 9 },
+      { x: xOffset + 1, y: 10 }, { x: xOffset + 2, y: 10 },
     ];
     pixels.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
   }
