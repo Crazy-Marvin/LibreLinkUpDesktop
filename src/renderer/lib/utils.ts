@@ -126,19 +126,6 @@ export function updateTrayNumber(number: number, targetLow?: number, targetHigh?
   }
 }
 
-export async function initializeTrayAfterLogin(token: string, country: string, accountId: string) {
-  try {
-    const data = await getCGMData({ token, country, accountId });
-    if (data?.glucoseMeasurement?.ValueInMgPerDl) {
-      const glucoseValue = getUserValue(data.glucoseMeasurement.ValueInMgPerDl);
-      const targetLow = data?.targetLow ?? 70;
-      const targetHigh = data?.targetHigh ?? 180;
-      updateTrayNumber(Math.round(glucoseValue), targetLow, targetHigh);
-    }
-  } catch (error) {
-    console.error('Failed to initialize tray:', error);
-  }
-}
 
 export const getTrayVisibility = (): boolean => {
   const trayVisible = localStorage.getItem('trayVisible');
