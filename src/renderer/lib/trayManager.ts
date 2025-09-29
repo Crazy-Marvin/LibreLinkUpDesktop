@@ -73,7 +73,6 @@ class TrayManager {
     targetLow?: number,
     targetHigh?: number,
   ): void {
-
     const clampedNumber = this.clampNumber(newNumber);
     this.state.currentNumber = clampedNumber;
     this.state.currentUnit = unit;
@@ -244,7 +243,13 @@ class TrayManager {
 
   private createSimpleNumberIcon(): Electron.NativeImage {
     const buffer = this.createIconBuffer();
-    this.fillSemiTransparentBackground(buffer);
+
+    const bgColor = this.getBackgroundColorForGlucoseLevel(
+      this.state.currentNumber,
+    );
+    bgColor.a = 220;
+    this.fillBufferWithColor(buffer, bgColor);
+
     this.drawSimplifiedNumber(buffer, this.state.currentNumber);
 
     return nativeImage.createFromBuffer(buffer, {
@@ -252,7 +257,6 @@ class TrayManager {
       height: TRAY_ICON_SIZE,
     });
   }
-
   private createBasicIcon(): Electron.NativeImage {
     const buffer = Buffer.alloc(TRAY_ICON_SIZE * TRAY_ICON_SIZE * 4);
 
@@ -279,11 +283,6 @@ class TrayManager {
     this.fillBufferWithColor(buffer, bgColor);
   }
 
-  private fillSemiTransparentBackground(buffer: Buffer): void {
-    const bgColor: RGBAColor = { r: 40, g: 40, b: 40, a: 220 };
-    this.fillBufferWithColor(buffer, bgColor);
-  }
-
   private fillBufferWithColor(buffer: Buffer, color: RGBAColor): void {
     for (let i = 0; i < buffer.length; i += 4) {
       buffer[i] = color.r;
@@ -294,34 +293,39 @@ class TrayManager {
   }
 
   // Color utility methods
-  private getBackgroundColorForGlucoseLevel(level: number): RGBAColor {
-    let targetLow = this.state.targetLow;
-    let targetHigh = this.state.targetHigh;
+private getBackgroundColorForGlucoseLevel(level: number): RGBAColor {
+  let targetLow = this.state.targetLow;
+  let targetHigh = this.state.targetHigh;
 
-    // Convert targets to mmol/L scale if current unit is mmol/L
-    if (this.state.currentUnit === 'mmol/L') {
-      targetLow = targetLow / 18;
-      targetHigh = targetHigh / 18;
-    }
-
-    if (level < targetLow) return { r: 80, g: 20, b: 20, a: 220 }; // Dark red
-    if (level > targetHigh) return { r: 80, g: 50, b: 0, a: 220 }; // Dark orange
-    return { r: 20, g: 60, b: 20, a: 220 }; // Dark green
+  if (this.state.currentUnit === 'mmol/L') {
+    targetLow = targetLow / 18;
+    targetHigh = targetHigh / 18;
   }
 
+  // Use fully opaque colors
+ if (level < targetLow) return { r: 220, g: 80, b: 80, a: 255 };     // Darker red
+  if (level > targetHigh) return { r: 220, g: 150, b: 50, a: 255 };   // Darker orange
+  return { r: 80, g: 220, b: 80, a: 255 };                                                 // Light green
+}
+
+  // private getColorForGlucoseLevel(level: number): RGBAColor {
+  //   let targetLow = this.state.targetLow;
+  //   let targetHigh = this.state.targetHigh;
+
+  //   // Convert targets to mmol/L scale if current unit is mmol/L
+  //   if (this.state.currentUnit === 'mmol/L') {
+  //     targetLow = targetLow / 18;
+  //     targetHigh = targetHigh / 18;
+  //   }
+
+  //   if (level < targetLow) return { r: 255, g: 200, b: 200, a: 255 }; // Light red
+  //   if (level > targetHigh) return { r: 255, g: 220, b: 150, a: 255 }; // Light orange
+  //   return { r: 200, g: 255, b: 200, a: 255 }; // Light green
+  // }
+
   private getColorForGlucoseLevel(level: number): RGBAColor {
-    let targetLow = this.state.targetLow;
-    let targetHigh = this.state.targetHigh;
-
-    // Convert targets to mmol/L scale if current unit is mmol/L
-    if (this.state.currentUnit === 'mmol/L') {
-      targetLow = targetLow / 18;
-      targetHigh = targetHigh / 18;
-    }
-
-    if (level < targetLow) return { r: 255, g: 200, b: 200, a: 255 }; // Light red
-    if (level > targetHigh) return { r: 255, g: 220, b: 150, a: 255 }; // Light orange
-    return { r: 200, g: 255, b: 200, a: 255 }; // Light green
+    // Always return white for text color for better contrast
+    return { r: 255, g: 255, b: 255, a: 255 };
   }
 
   // Drawing methods
