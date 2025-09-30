@@ -224,7 +224,8 @@ class TrayManager {
   }
 
   private updateTrayContextMenu(): void {
-    if (!this.state.tray || !this.state.isCreated) return;
+    if (!this.state.tray) return;
+    // if (!this.state.tray || !this.state.isCreated) return;
 
     let targetLow = this.state.targetLow;
     let targetHigh = this.state.targetHigh;
