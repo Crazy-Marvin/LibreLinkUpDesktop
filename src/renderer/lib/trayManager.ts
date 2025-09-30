@@ -29,6 +29,7 @@ interface TrayManagerState {
   currentUnit: string;
   targetLow: number;
   targetHigh: number;
+  isCreated: boolean;
 }
 
 // Tray Manager Class
@@ -40,6 +41,7 @@ class TrayManager {
     currentUnit: '',
     targetLow: 70,
     targetHigh: 180,
+    isCreated: false,
   };
 
   public updateTargets(targetLow: number, targetHigh: number): void {
@@ -64,19 +66,28 @@ class TrayManager {
 
   // Main public methods
   public createTray(window: BrowserWindow): void {
+    if (this.state.isCreated && this.state.tray) {
+      this.state.mainWindow = window;
+      return;
+    }
+
     this.state.mainWindow = window;
 
-    if (this.isUbuntu()) {
-      this.createUbuntuTray();
-    } else {
-      this.createStandardTray();
+    if(!this.state.isCreated){
+      if (this.isUbuntu()) {
+        this.createUbuntuTray();
+      } else {
+        this.createStandardTray();
+      }
     }
+    this.state.isCreated = true;
   }
 
   public destroyTray(): void {
     if (this.state.tray) {
       this.state.tray.destroy();
       this.state.tray = null;
+      this.state.isCreated = false;
     }
   }
 
@@ -95,12 +106,18 @@ class TrayManager {
       this.state.targetHigh = targetHigh;
     }
 
-    if (this.state.tray) {
+    if (this.state.tray && this.state.isCreated) {
       this.updateExistingTray();
-    } else if (this.state.mainWindow) {
-      console.log('Tray not found, creating new tray');
-      this.createTray(this.state.mainWindow);
+    } else {
     }
+  }
+
+  public hasTray(): boolean {
+    return this.state.isCreated && this.state.tray !== null;
+  }
+
+  public getCreationState(): boolean {
+    return this.state.isCreated;
   }
 
   private clampNumber(number: number): number {
@@ -141,14 +158,21 @@ class TrayManager {
       this.createTrayInstance(basicIcon);
     } catch (error) {
       console.error('Complete tray creation failure:', error);
+      this.state.isCreated = false;
     }
   }
 
   private createTrayInstance(icon: Electron.NativeImage): void {
-    this.state.tray = new Tray(icon);
-    this.setupTrayEventListeners();
-    this.updateTrayTooltip();
-    this.updateTrayContextMenu();
+    try {
+      this.state.tray = new Tray(icon);
+      this.setupTrayEventListeners();
+      this.updateTrayTooltip();
+      this.updateTrayContextMenu();
+      this.state.isCreated = true;
+    } catch (error) {
+      this.state.isCreated = false;
+      throw error;
+    }
   }
 
   private setupTrayEventListeners(): void {
@@ -164,10 +188,15 @@ class TrayManager {
         }
       }
     });
+
+    this.state.tray.on('destroyed', () => {
+      this.state.tray = null;
+      this.state.isCreated = false;
+    });
   }
 
   private updateExistingTray(): void {
-    if (!this.state.tray) return;
+    if (!this.state.tray || !this.state.isCreated) return;
 
     try {
       const newIcon = this.isUbuntu()
@@ -187,7 +216,7 @@ class TrayManager {
   }
 
   private updateTrayTooltip(): void {
-    if (this.state.tray) {
+    if (this.state.tray && this.state.isCreated) {
       this.state.tray.setToolTip(
         `Blood Sugar: ${this.state.currentNumber} ${this.state.currentUnit}`,
       );
@@ -195,7 +224,7 @@ class TrayManager {
   }
 
   private updateTrayContextMenu(): void {
-    if (!this.state.tray) return;
+    if (!this.state.tray || !this.state.isCreated) return;
 
     let targetLow = this.state.targetLow;
     let targetHigh = this.state.targetHigh;
@@ -366,22 +395,22 @@ class TrayManager {
     return { r: 94, g: 197, b: 34, a: 255 };
   }
 
-private getColorForGlucoseLevel(level: number): RGBAColor {
-  const scale = this.state.currentUnit === 'mmol/L' ? 1 / 18 : 1;
+  private getColorForGlucoseLevel(level: number): RGBAColor {
+    const scale = this.state.currentUnit === 'mmol/L' ? 1 / 18 : 1;
 
-  const targetLow  = this.state.targetLow  * scale;
-  const targetHigh = this.state.targetHigh * scale;
-  const lowTh      = LOW  * scale;
-  const highTh     = HIGH * scale;
+      const targetLow  = this.state.targetLow  * scale;
+      const targetHigh = this.state.targetHigh * scale;
+      const lowTh      = LOW  * scale;
+      const highTh     = HIGH * scale;
 
-  const inWarning =
-    (level >= lowTh && level < targetLow) ||
-    (level >  targetHigh && level <= highTh);
+    const inWarning =
+      (level >= lowTh && level < targetLow) ||
+      (level >  targetHigh && level <= highTh);
 
-  return inWarning
-    ? { r: 0,   g: 0,   b: 0,   a: 255 }
-    : { r: 255, g: 255, b: 255, a: 255 };
-}
+    return inWarning
+      ? { r: 0,   g: 0,   b: 0,   a: 255 }
+      : { r: 255, g: 255, b: 255, a: 255 };
+  }
 
 
   // Drawing methods
@@ -403,7 +432,7 @@ private getColorForGlucoseLevel(level: number): RGBAColor {
 
   private drawSimplifiedNumber(buffer: Buffer, number: number): void {
     const numStr = number > MAX_DISPLAY_NUMBER ? '999' : number.toString();
-    const color = this.getColorForGlucoseLevel(60);
+    const color = this.getColorForGlucoseLevel(parseInt(numStr));
 
     if (numStr.length === 1) {
       this.drawSingleDigit(buffer, parseInt(numStr), 5, color);
@@ -686,3 +715,5 @@ export const updateTrayNumber = (
 export const updateTrayTargets = (targetLow: number, targetHigh: number) =>
   trayManager.updateTargets(targetLow, targetHigh);
 export const destroyTray = () => trayManager.destroyTray();
+export const hasTray = () => trayManager.hasTray();
+export const isTrayCreated = () => trayManager.getCreationState();
