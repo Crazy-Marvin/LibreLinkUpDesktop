@@ -12,7 +12,7 @@ import { registerLogoutHandler, destroyLogoutHandler } from "./logoutHandler";
 import { registerRefreshHandler, destroyRefreshHandler } from "./refreshHandler";
 import { registerAlertHandler, destroyAlertHandler } from "./alertHandler";
 import { registerTrayHandler, destroyTrayHandler, setTrayMainWindow } from "./trayHandler";
-import { createTray, updateTrayNumber } from './../renderer/lib/trayManager';
+import { destroyTray } from './../renderer/lib/trayManager';
 
 // class AppUpdater {
 //   constructor() {
@@ -88,7 +88,7 @@ const createWindow = async () => {
     }
 
     setTrayMainWindow(mainWindow);
-    
+
   })
 
   mainWindow.on('closed', () => {
@@ -178,6 +178,7 @@ app.on('window-all-closed', () => {
   destroyRefreshHandler();
   destroyAlertHandler();
   destroyTrayHandler();
+  destroyTray();
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
   if (process.platform !== 'darwin') {
