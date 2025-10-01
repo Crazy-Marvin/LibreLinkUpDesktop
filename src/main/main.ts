@@ -23,7 +23,7 @@ import { destroyTray } from './../renderer/lib/trayManager';
 // }
 
 let mainWindow: BrowserWindow | null = null
-let trayCreated = false
+let isQuitting = false
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support')
@@ -83,6 +83,7 @@ const createWindow = async () => {
     }
     if (process.env.START_MINIMIZED) {
       mainWindow.minimize()
+      mainWindow.focus()
     } else {
       mainWindow.show()
     }
@@ -91,9 +92,27 @@ const createWindow = async () => {
 
   })
 
+  mainWindow.on('close', function (event) {
+    if (process.platform === 'darwin' && !isQuitting) {
+      event.preventDefault();
+      try {
+        (this as BrowserWindow).hide();
+      } catch {
+        // no-op: window may already be tearing down under hot-reload
+      }
+      return;
+    }
+    // allow close on non-mac or when quitting
+  });
+
+
   mainWindow.on('closed', () => {
     mainWindow = null
   })
+
+  app.on('before-quit', () => {
+   isQuitting = true;
+  });
 
   const menuBuilder = new MenuBuilder(mainWindow)
   menuBuilder.buildMenu()
@@ -179,7 +198,11 @@ app.on('window-all-closed', () => {
   destroyAlertHandler();
   destroyTrayHandler();
   destroyTray();
-  app.quit();
+  // Respect the OSX convention of having the application in memory even
+  // after all windows have been closed
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
 })
 
 app
@@ -189,7 +212,17 @@ app
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
-      if (mainWindow === null) createWindow()
+      // if (mainWindow === null) createWindow()
+        if (BrowserWindow.getAllWindows().length === 0) {
+          createWindow();
+        } else {
+          // If windows exist but are minimized or hidden, show them
+          BrowserWindow.getAllWindows().forEach(win => {
+            if (win.isMinimized()) win.restore();
+            win.show();
+            win.focus();
+          });
+        }
     })
   })
   .catch(console.log)
