@@ -24,7 +24,7 @@ type GetGeneralRequest = {
 
 export async function getAuthToken(request: LoginAttemptRequest): Promise<{
   token: string, accountId: string, accountCountry: string,
-} | null> {
+} | { error: number } | null> {
   try {
     let baseUrl = getBaseUrl(request.country);
 
@@ -82,7 +82,6 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
     }
     else{
       return {
-        success: false,
         error: response.data?.status || 999999
       };
     }
@@ -99,7 +98,7 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
   return null;
 }
 
-export async function getCGMData(request: GetGeneralRequest): Promise<string|null> {
+export async function getCGMData(request: GetGeneralRequest): Promise<string|null|{error: string, message: string}> {
   try {
     const baseURL = getBaseUrl(request.country)
     const headers = {
@@ -121,7 +120,9 @@ export async function getCGMData(request: GetGeneralRequest): Promise<string|nul
     const patientId = connResponse.data?.data[0]?.patientId
 
     if (!patientId) {
-      console.log("Unable to get the patient id")
+      if (connResponse.data?.data?.length === 0) {
+        return { error: 'NO_CONNECTIONS', message: 'No LibreLinkUp connections found. Please set up a connection in your Libre app.' }
+      }
       return null
     }
 
@@ -133,7 +134,7 @@ export async function getCGMData(request: GetGeneralRequest): Promise<string|nul
     })
 
     return graphResponse?.data?.data?.connection
-  } catch (error) {
+  } catch (error: any) {
     console.log('Unable to getCGMData: ', error)
   }
 
@@ -160,7 +161,7 @@ export async function getConnection(request: GetGeneralRequest): Promise<string|
     })
 
     return response?.data?.data[0]
-  } catch (error) {
+  } catch (error: any) {
     console.log('Unable to getConnection: ', error)
   }
 
