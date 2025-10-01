@@ -47,7 +47,20 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
     });
 
     if (response.data?.status === 0 ) {
-      baseUrl = getBaseUrl(response.data.data.user.country);
+      // Handle different response structures
+      let countryCode;
+      if (response.data.data.user?.country) {
+        // Original structure: {data: {user: {country: "fr"}}}
+        countryCode = response.data.data.user.country;
+      } else if (response.data.data.region) {
+        // New structure: {data: {region: "fr"}}
+        countryCode = response.data.data.region;
+      } else {
+        // Fallback to original request country
+        countryCode = request.country;
+      }
+
+      baseUrl = getBaseUrl(countryCode);
 
       response = await axios({
         method: 'post',
