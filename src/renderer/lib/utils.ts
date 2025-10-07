@@ -45,6 +45,7 @@ export async function clearRedirectTo () {
 }
 
 export function sendLogout() {
+  setTrayVisibility(false);
   window.electron.ipcRenderer.sendMessage('logout')
 }
 
