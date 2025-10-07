@@ -54,6 +54,12 @@ jobs:
             release/build/*.msi
             release/build/*.appx
             release/build/*-setup.exe
+            release/build/*-ia32-setup.exe
+            release/build/*-x64-setup.exe
+            release/build/*-ia32.msi
+            release/build/*-x64.msi
+            release/build/*-ia32.appx
+            release/build/*-x64.appx
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -67,6 +73,12 @@ jobs:
             release/build/*.msi
             release/build/*.appx
             release/build/*-setup.exe
+            release/build/*-ia32-setup.exe
+            release/build/*-x64-setup.exe
+            release/build/*-ia32.msi
+            release/build/*-x64.msi
+            release/build/*-ia32.appx
+            release/build/*-x64.appx
 
   build_on_ubuntu:
     runs-on: ubuntu-latest
@@ -104,6 +116,8 @@ jobs:
             release/build/*.deb
             release/build/*.snap
             release/build/*.AppImage
+            release/build/*-amd64.deb
+            release/build/*-x86_64.AppImage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -116,6 +130,8 @@ jobs:
             release/build/*.deb
             release/build/*.snap
             release/build/*.AppImage
+            release/build/*-amd64.deb
+            release/build/*-x86_64.AppImage
 
   build_on_mac:
     runs-on: macOS-latest
