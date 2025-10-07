@@ -86,10 +86,13 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
       };
     }
 
+    let finalCountryCode = response.data?.data?.user?.country?.toLowerCase();
+    finalCountryCode = finalCountryCode === 'ch' ? 'eu' : finalCountryCode;
+
     return {
       token: response.data?.data?.authTicket?.token,
       accountId: response.data?.data?.user?.id,
-      accountCountry: response.data?.data?.user?.country?.toLowerCase(),
+      accountCountry: finalCountryCode,
     };
   } catch (error) {
     console.log("Unable to get the token: ", error);
