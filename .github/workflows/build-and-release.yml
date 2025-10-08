@@ -6,6 +6,10 @@ on:
       - 'stage-v*'
   pull_request:
     types: [review_requested]
+
+permissions:
+  contents: write
+
 jobs:
   build_on_windows:
     runs-on: windows-latest
