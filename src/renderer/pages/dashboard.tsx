@@ -37,6 +37,20 @@ export default function DashboardPage() {
   const [isReady, setIsReady] = useState(false);
   const [trayVisible, setTrayVisible] = useState<boolean>(true);
 
+  const updateTrayManually = () => {
+    if (graphData?.glucoseMeasurement?.ValueInMgPerDl !== undefined &&
+        graphData?.glucoseMeasurement?.ValueInMgPerDl !== null) {
+
+      const glucoseValue = getUserValue(graphData.glucoseMeasurement.ValueInMgPerDl);
+      const targetLow = graphData?.targetLow ?? 70;
+      const targetHigh = graphData?.targetHigh ?? 180;
+
+      updateTrayNumber(Math.round(glucoseValue), targetLow, targetHigh);
+    } else {
+      console.log('No glucose data available for tray update');
+    }
+  }
+
   const populateGraphData = async () => {
     try {
       const data = await getCGMData({
@@ -114,6 +128,10 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    updateTrayManually();
+  }, [graphData]);
+
+  useEffect(() => {
     const initializeTray = () => {
       const visibility = getTrayVisibility();
 
@@ -159,20 +177,11 @@ export default function DashboardPage() {
   const { dispatchAlert } = useGlucoseAlerts();
 
   useEffect(() => {
-    if (graphData?.glucoseMeasurement?.ValueInMgPerDl) {
+    if (graphData?.glucoseMeasurement?.ValueInMgPerDl !== undefined &&
+        graphData?.glucoseMeasurement?.ValueInMgPerDl !== null) {
       dispatchAlert(graphData.glucoseMeasurement.ValueInMgPerDl,graphData?.targetLow,graphData?.targetHigh);
     }
   }, [graphData])
-
-  useEffect(() => {
-    if (graphData?.glucoseMeasurement?.ValueInMgPerDl && token && country && accountId) {
-      const glucoseValue = getUserValue(graphData.glucoseMeasurement.ValueInMgPerDl);
-      const targetLow = graphData?.targetLow ?? 70;
-      const targetHigh = graphData?.targetHigh ?? 180;
-
-      updateTrayNumber(Math.round(glucoseValue), targetLow, targetHigh);
-    }
-  }, [graphData, token, country, accountId]);
 
   if (!isReady) {
     return <LoadingScreen />;
