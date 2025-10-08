@@ -52,6 +52,10 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
       if (response.data.data.user?.country) {
         // Original structure: {data: {user: {country: "fr"}}}
         countryCode = response.data.data.user.country;
+        // if countryCode is ch, set it to eu
+        if (countryCode.toLowerCase() === 'ch') {
+          countryCode = 'eu';
+        }
       } else if (response.data.data.region) {
         // New structure: {data: {region: "fr"}}
         countryCode = response.data.data.region;
@@ -96,6 +100,7 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
     };
   } catch (error) {
     console.log("Unable to get the token: ", error);
+    throw error;
   }
 
   return null;
