@@ -1,0 +1,100 @@
+name: Update Flatpak Manifest
+
+# on:
+#   push:
+#   workflow_dispatch:
+
+jobs:
+  update-manifest:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout main repo
+      uses: actions/checkout@v4
+
+    - name: Checkout target repo
+      uses: actions/checkout@v4
+      with:
+        repository: lkavindu199/test_libre
+        token: ${{ secrets.TARGET_REPO_TOKEN }}
+        path: target-repo
+
+    - name: Get latest commit
+      id: commit-info
+      run: |
+        echo "latest_commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Update manifest with Python
+      run: |
+        cd target-repo
+
+        LATEST_COMMIT="${{ steps.commit-info.outputs.latest_commit }}"
+
+        python3 -c "
+        import re
+
+        latest_commit = '$LATEST_COMMIT'
+
+        print(f'Updating with commit: {latest_commit}')
+
+        # Read file
+        with open('rocks.poopjournal.librelinkupdesktop.yml', 'r') as f:
+            content = f.read()
+
+        # Find ALL git URLs in the file
+        git_urls = re.findall(r'url: (https://github\.com/[^\s]+\.git)', content)
+        print(f'Found {len(git_urls)} git URLs in total:')
+        for url in git_urls:
+            print(f'  - {url}')
+
+        # Replace ANY git URL with our new URL
+        content = re.sub(
+            r'url: https://github\.com/[^/\s]+/[^\s]+\.git',
+            'url: https://github.com/lkavindu199/LibreLinkUpDesktop_new1.git',
+            content
+        )
+        print('✅ Replaced ALL git URLs with our repository')
+
+        # Replace branch (any branch name) after ANY git URL
+        content = re.sub(
+            r'(url: https://github\.com/lkavindu199/LibreLinkUpDesktop_new1\.git\s+)branch: \S+',
+            r'\\1branch: main',
+            content
+        )
+        print('✅ Updated branch to main for all occurrences')
+
+        # Replace commit (any commit hash) after ANY branch line
+        content = re.sub(
+            r'(branch: [^\s]+\s+)commit: [a-f0-9]+',
+            f'\\1commit: {latest_commit}',
+            content
+        )
+        print('✅ Updated commit ID for all occurrences')
+
+        # Write back
+        with open('rocks.poopjournal.librelinkupdesktop.yml', 'w') as f:
+            f.write(content)
+
+        print('✅ File updated successfully')
+        "
+
+    - name: Verify all changes
+      run: |
+        cd target-repo
+        echo "=== All git sources after update ==="
+        grep -A 2 -B 1 "url:" rocks.poopjournal.librelinkupdesktop.yml
+
+    - name: Commit and push
+      run: |
+        cd target-repo
+        git config user.name "GitHub Actions Bot"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        git add rocks.poopjournal.librelinkupdesktop.yml
+
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "chore: Update manifest "
+          git push
+          echo "✅ Manifest updated successfully"
+        fi

@@ -1,0 +1,50 @@
+name: Sync File to Target Repo
+
+# on:
+#   push:
+#   workflow_dispatch:
+
+jobs:
+  sync-file:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout main repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Checkout target repo
+      uses: actions/checkout@v4
+      with:
+        repository: lkavindu199/test_libre
+        token: ${{ secrets.TARGET_REPO_TOKEN }}
+        path: target-repo
+        ref: main
+
+    - name: Copy file to target repo
+      run: |
+        # Create file if it doesn't exist in target
+        if [ -f "generated-sources.json" ]; then
+          cp generated-sources.json target-repo/
+          echo "File copied successfully"
+        else
+          echo "Error: generated-sources.json not found in source repo"
+          exit 1
+        fi
+
+    - name: Commit and push to target repo
+      run: |
+        cd target-repo
+        git config user.name "GitHub Actions Bot"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        git add generated-sources.json
+
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Auto-sync: Update generated-sources.json from LibreLinkUpDesktop_new1"
+          git push
+          echo "Changes pushed successfully"
+        fi
