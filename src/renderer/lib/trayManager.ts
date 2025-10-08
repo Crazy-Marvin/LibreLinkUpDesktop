@@ -6,8 +6,8 @@ const MAX_DISPLAY_NUMBER = 999;
 const MIN_DISPLAY_NUMBER = 0;
 const CORNER_RADIUS = 3;
 
-const LOW = 55;  // Hypoglycemia threshold (mg/dL)
-const HIGH = 250; // Hyperglycemia threshold (mg/dL)
+const LOW = 70;  // Hypoglycemia threshold (mg/dL)
+const HIGH = 240; // Hyperglycemia threshold (mg/dL)
 
 // Interfaces
 interface PixelCoordinates {
