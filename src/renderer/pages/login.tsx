@@ -59,38 +59,58 @@ export default function LoginPage() {
   const login = useAuthStore((state) => state.login)
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const authData = await getAuthToken({
-      country: values.country,
-      username: values.username,
-      password: values.password,
-    }) as {
-      token?: string;
-      accountId?: string;
-      accountCountry?: string;
-      error?: number;
-    };
+    try {
+      const authData = await getAuthToken({
+        country: values.country,
+        username: values.username,
+        password: values.password,
+      }) as {
+        token?: string;
+        accountId?: string;
+        accountCountry?: string;
+        error?: number;
+      };
 
-    if (authData && !authData.error) {
-      const token = authData?.token || ''
-      const accountId = authData?.accountId || ''
-      const accountCountry = authData?.accountCountry || values.country
-      login(token, accountCountry, values.language, accountId)
-      navigate('/dashboard')
-    } else if (authData?.error) {
-      if (authData.error === 4) {
-        toast.error(
-          'Privacy policy error',
-        );
-      } else if (authData.error === 2) {
-        toast.error(
-          'Invalid credentials - Please check your username and password.',
-        );
-      } else {
-        toast.error('Authentication failed');
+      if (authData && !authData.error) {
+        const token = authData?.token || ''
+        const accountId = authData?.accountId || ''
+        const accountCountry = authData?.accountCountry || values.country
+        login(token, accountCountry, values.language, accountId)
+        navigate('/dashboard')
+      } else if (authData?.error) {
+        if (authData.error === 4) {
+          toast.error(
+            'Privacy policy error',
+          );
+        } else if (authData.error === 2) {
+          toast.error(
+            'Invalid credentials - Please check your username and password.',
+          );
+        } else {
+          toast.error('Authentication failed');
+        }
       }
-    }
-    else{
-      toast.error("Error Occurred")
+      else{
+        toast.error("Unknown Error Occurred")
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+
+      if (error.response) {
+        // HTTP error responses
+        const status = error.response.status;
+        toast.error(`Server error (${status}): ${error.response.statusText || 'Unknown error'}`);
+      } else if (error.request) {
+        // Network error - no response received
+        toast.error('Unable to connect to server. Please check your internet connection.');
+      } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        toast.error('Request timeout. Please try again.');
+      } else if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
+        toast.error('Network error. Please check your internet connection.');
+      } else {
+        // Other errors
+        toast.error('An unexpected error occurred. Please try again.');
+      }
     }
   }
 
