@@ -186,6 +186,7 @@ class TrayManager {
           this.state.mainWindow.show();
           this.state.mainWindow.focus();
         }
+        this.updateTrayContextMenu();
       }
     });
 
@@ -238,7 +239,12 @@ class TrayManager {
       targetUnit = 'mmol/L';
     }
 
-    const contextMenu = Menu.buildFromTemplate([
+    // Check if mainWindow exists and get visibility state
+    const isWindowVisible = this.state.mainWindow
+      ? this.state.mainWindow.isVisible() && !this.state.mainWindow.isDestroyed()
+      : false;
+
+    const contextMenuTemplate: Electron.MenuItemConstructorOptions[] = [
       {
         label: `Blood Sugar: ${this.state.currentNumber} ${this.state.currentUnit}`,
         enabled: false,
@@ -248,12 +254,34 @@ class TrayManager {
         enabled: false,
       },
       { type: 'separator' },
-      { label: 'Show App', click: () => this.state.mainWindow?.show() },
-      { label: 'Hide App', click: () => this.state.mainWindow?.hide() },
-      { type: 'separator' },
-      { label: 'Quit', click: () => require('electron').app.quit() },
-    ]);
+    ];
 
+    // Only show "Show App" if window is hidden, and "Hide App" if window is visible
+    if (!isWindowVisible) {
+      contextMenuTemplate.push({
+        label: 'Show App',
+        click: () => {
+          this.state.mainWindow?.show();
+          this.state.mainWindow?.focus();
+          setTimeout(() => this.updateTrayContextMenu(), 100);
+        }
+      });
+    } else {
+      contextMenuTemplate.push({
+        label: 'Hide App',
+        click: () => {
+          this.state.mainWindow?.hide();
+          setTimeout(() => this.updateTrayContextMenu(), 100);
+        }
+      });
+    }
+
+    contextMenuTemplate.push(
+      { type: 'separator' },
+      { label: 'Quit', click: () => require('electron').app.quit() }
+    );
+
+    const contextMenu = Menu.buildFromTemplate(contextMenuTemplate);
     this.state.tray.setContextMenu(contextMenu);
   }
 
