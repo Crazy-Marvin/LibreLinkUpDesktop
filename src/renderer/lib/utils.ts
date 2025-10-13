@@ -138,18 +138,6 @@ export const setTrayVisibility = async (visible: boolean) => {
 
   if (visible) {
     await window.electron.ipcRenderer.sendMessage('create-tray');
-
-    const { token, country, accountId } = useAuthStore.getState();
-    if (token && country && accountId) {
-      try {
-        const glucoseValue = await getGlucoseValueForTray(token, country, accountId);
-        if (glucoseValue > 0) {
-          updateTrayNumber(glucoseValue, getUserUnit());
-        }
-      } catch (error) {
-        console.error('Failed to update tray with glucose value:', error);
-      }
-    }
   } else {
     await window.electron.ipcRenderer.sendMessage('destroy-tray');
   }

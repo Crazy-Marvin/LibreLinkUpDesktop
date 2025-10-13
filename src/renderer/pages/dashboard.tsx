@@ -140,6 +140,8 @@ export default function DashboardPage() {
       } else {
         setTrayVisibility(false);
       }
+
+      updateTrayManually();
     };
 
     initializeTray();
