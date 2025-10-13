@@ -76,7 +76,7 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
         },
         headers: {
           product: 'llu.android',
-          version: '4.12.0',
+          version: '4.16.0',
           Pragma: 'no-cache',
           'Cache-Control': 'no-cache',
         // 'Accept-Encoding': 'gzip',
@@ -111,7 +111,7 @@ export async function getCGMData(request: GetGeneralRequest): Promise<string|nul
     const baseURL = getBaseUrl(request.country)
     const headers = {
       product: 'llu.android',
-      version: '4.12.0',
+      version: '4.16.0',
       Pragma: 'no-cache',
       'Cache-Control': 'no-cache',
       Authorization: `Bearer ${request.token}`,
