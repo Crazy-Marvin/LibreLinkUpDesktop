@@ -25,6 +25,7 @@ interface RGBAColor {
 interface TrayManagerState {
   tray: Tray | null;
   currentNumber: number;
+  displayValue: string;
   mainWindow: BrowserWindow | null;
   currentUnit: string;
   targetLow: number;
@@ -32,11 +33,79 @@ interface TrayManagerState {
   isCreated: boolean;
 }
 
+// Pre-calculated digit patterns for better performance
+const DIGIT_PATTERNS: Record<string, PixelCoordinates[]> = {
+  '0': [
+    { x: 1, y: 4 }, { x: 2, y: 4 },
+    { x: 0, y: 5 }, { x: 3, y: 5 },
+    { x: 0, y: 6 }, { x: 3, y: 6 },
+    { x: 0, y: 7 }, { x: 3, y: 7 },
+    { x: 0, y: 8 }, { x: 3, y: 8 },
+    { x: 0, y: 9 }, { x: 3, y: 9 },
+    { x: 1, y: 10 }, { x: 2, y: 10 },
+  ],
+  '1': [
+    { x: 1, y: 4 }, { x: 0, y: 5 }, { x: 1, y: 5 },
+    { x: 1, y: 6 }, { x: 1, y: 7 }, { x: 1, y: 8 },
+    { x: 1, y: 9 }, { x: 0, y: 10 }, { x: 1, y: 10 }, { x: 2, y: 10 },
+  ],
+  '2': [
+    { x: 0, y: 4 }, { x: 1, y: 4 }, { x: 2, y: 4 },
+    { x: 3, y: 5 }, { x: 2, y: 6 }, { x: 1, y: 7 },
+    { x: 0, y: 8 }, { x: 0, y: 9 }, { x: 1, y: 9 },
+    { x: 2, y: 9 }, { x: 3, y: 9 },
+  ],
+  '3': [
+    { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 0, y: 5 },
+    { x: 3, y: 5 }, { x: 3, y: 6 }, { x: 1, y: 7 },
+    { x: 2, y: 7 }, { x: 3, y: 8 }, { x: 0, y: 9 },
+    { x: 3, y: 9 }, { x: 1, y: 10 }, { x: 2, y: 10 },
+  ],
+  '4': [
+    { x: 2, y: 4 }, { x: 1, y: 5 }, { x: 2, y: 5 },
+    { x: 0, y: 6 }, { x: 2, y: 6 }, { x: 0, y: 7 },
+    { x: 1, y: 7 }, { x: 2, y: 7 }, { x: 3, y: 7 },
+    { x: 2, y: 8 }, { x: 2, y: 9 }, { x: 2, y: 10 },
+  ],
+  '5': [
+    { x: 0, y: 4 }, { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 3, y: 4 },
+    { x: 0, y: 5 }, { x: 0, y: 6 }, { x: 0, y: 7 }, { x: 1, y: 7 },
+    { x: 2, y: 7 }, { x: 3, y: 8 }, { x: 3, y: 9 }, { x: 0, y: 10 },
+    { x: 1, y: 10 }, { x: 2, y: 10 },
+  ],
+  '6': [
+    { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 0, y: 5 },
+    { x: 0, y: 6 }, { x: 1, y: 6 }, { x: 2, y: 6 },
+    { x: 0, y: 7 }, { x: 3, y: 7 }, { x: 0, y: 8 },
+    { x: 3, y: 8 }, { x: 0, y: 9 }, { x: 3, y: 9 },
+    { x: 1, y: 10 }, { x: 2, y: 10 },
+  ],
+  '7': [
+    { x: 0, y: 4 }, { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 3, y: 4 },
+    { x: 3, y: 5 }, { x: 2, y: 6 }, { x: 2, y: 7 },
+    { x: 2, y: 8 }, { x: 2, y: 9 }, { x: 2, y: 10 },
+  ],
+  '8': [
+    { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 0, y: 5 }, { x: 3, y: 5 },
+    { x: 1, y: 6 }, { x: 2, y: 6 }, { x: 0, y: 7 }, { x: 3, y: 7 },
+    { x: 0, y: 8 }, { x: 3, y: 8 }, { x: 1, y: 9 }, { x: 2, y: 9 },
+  ],
+  '9': [
+    { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 0, y: 5 }, { x: 3, y: 5 },
+    { x: 0, y: 6 }, { x: 3, y: 6 }, { x: 1, y: 7 }, { x: 2, y: 7 },
+    { x: 3, y: 7 }, { x: 3, y: 8 }, { x: 2, y: 9 }, { x: 1, y: 10 },
+  ],
+  'dot': [
+    { x: 1, y: 10 }, { x: 2, y: 10 },
+  ]
+};
+
 // Tray Manager Class
 class TrayManager {
   private state: TrayManagerState = {
     tray: null,
     currentNumber: 0,
+    displayValue: '0',
     mainWindow: null,
     currentUnit: '',
     targetLow: 70,
@@ -48,7 +117,6 @@ class TrayManager {
     this.state.targetLow = targetLow;
     this.state.targetHigh = targetHigh;
 
-    // Update the tray if it exists to reflect new colors
     if (this.state.tray && this.state.currentNumber !== 0) {
       this.updateExistingTray();
     }
@@ -56,12 +124,38 @@ class TrayManager {
 
   // Platform detection
   private isUbuntu(): boolean {
-    return (
-      process.platform === 'linux' &&
-      (process.env.XDG_CURRENT_DESKTOP?.includes('GNOME') ||
-        process.env.XDG_CURRENT_DESKTOP?.includes('Unity') ||
-        /ubuntu/i.test(process.env.OS || ''))
-    );
+    return process.platform === 'linux' &&
+           (process.env.XDG_CURRENT_DESKTOP?.includes('GNOME') ||
+            process.env.XDG_CURRENT_DESKTOP?.includes('Unity') ||
+            /ubuntu/i.test(process.env.OS || ''));
+  }
+
+  // Format number for display: 33.345 → 33.35, 3.3 → 3.3, 3.0 → 3
+  private formatDisplayNumber(number: number): string {
+    if (number >= MAX_DISPLAY_NUMBER) {
+      return MAX_DISPLAY_NUMBER.toString();
+    }
+
+    if (number <= MIN_DISPLAY_NUMBER) {
+      return MIN_DISPLAY_NUMBER.toString();
+    }
+
+    // Check if it's a whole number
+    if (Number.isInteger(number)) {
+      return number.toString();
+    }
+
+    // Format to 2 decimal places, but remove trailing .00 and trailing zero after decimal
+    const formatted = number.toFixed(2);
+
+    // Remove trailing zeros after decimal point
+    if (formatted.endsWith('.00')) {
+      return formatted.slice(0, -3);
+    } else if (formatted.endsWith('0')) {
+      return formatted.slice(0, -1);
+    }
+
+    return formatted;
   }
 
   // Main public methods
@@ -73,22 +167,16 @@ class TrayManager {
 
     this.state.mainWindow = window;
 
-    if(!this.state.isCreated){
-      if (this.isUbuntu()) {
-        this.createUbuntuTray();
-      } else {
-        this.createStandardTray();
-      }
+    if (!this.state.isCreated) {
+      this.isUbuntu() ? this.createUbuntuTray() : this.createStandardTray();
     }
     this.state.isCreated = true;
   }
 
   public destroyTray(): void {
-    if (this.state.tray) {
-      this.state.tray.destroy();
-      this.state.tray = null;
-      this.state.isCreated = false;
-    }
+    this.state.tray?.destroy();
+    this.state.tray = null;
+    this.state.isCreated = false;
   }
 
   public updateTrayNumber(
@@ -99,6 +187,7 @@ class TrayManager {
   ): void {
     const clampedNumber = this.clampNumber(newNumber);
     this.state.currentNumber = clampedNumber;
+    this.state.displayValue = this.formatDisplayNumber(clampedNumber);
     this.state.currentUnit = unit;
 
     if (targetLow !== undefined && targetHigh !== undefined) {
@@ -108,7 +197,6 @@ class TrayManager {
 
     if (this.state.tray && this.state.isCreated) {
       this.updateExistingTray();
-    } else {
     }
   }
 
@@ -125,19 +213,16 @@ class TrayManager {
   }
 
   private createStandardTray(): void {
-    const trayIcon = this.createTrayIconWithNumber(this.state.currentNumber);
+    const trayIcon = this.createTrayIconWithNumber(this.state.displayValue);
     this.createTrayInstance(trayIcon);
   }
 
   private createUbuntuTray(): void {
     try {
-      const trayIcon = this.createTrayIconWithNumber(this.state.currentNumber);
+      const trayIcon = this.createTrayIconWithNumber(this.state.displayValue);
       this.createTrayInstance(trayIcon);
     } catch (error) {
-      console.error(
-        'Failed to create Ubuntu tray with numbers, trying fallback:',
-        error,
-      );
+      console.error('Failed to create Ubuntu tray with numbers, trying fallback:', error);
       this.createUbuntuFallbackTray();
     }
   }
@@ -202,7 +287,7 @@ class TrayManager {
     try {
       const newIcon = this.isUbuntu()
         ? this.createSimpleNumberIcon()
-        : this.createTrayIconWithNumber(this.state.currentNumber);
+        : this.createTrayIconWithNumber(this.state.displayValue);
 
       this.state.tray.setImage(newIcon);
       this.updateTrayTooltip();
@@ -210,26 +295,21 @@ class TrayManager {
       this.notifyRenderer();
     } catch (error) {
       console.error('Error updating tray icon:', error);
-      // Fallback: update tooltip and context menu only
       this.updateTrayTooltip();
       this.updateTrayContextMenu();
     }
   }
 
   private updateTrayTooltip(): void {
-    if (this.state.tray && this.state.isCreated) {
-      this.state.tray.setToolTip(
-        `Blood Sugar: ${this.state.currentNumber} ${this.state.currentUnit}`,
-      );
-    }
+    this.state.tray?.setToolTip(
+      `Blood Sugar: ${this.state.displayValue} ${this.state.currentUnit}`,
+    );
   }
 
   private updateTrayContextMenu(): void {
     if (!this.state.tray) return;
-    // if (!this.state.tray || !this.state.isCreated) return;
 
-    let targetLow = this.state.targetLow;
-    let targetHigh = this.state.targetHigh;
+    let { targetLow, targetHigh } = this.state;
     let targetUnit = 'mg/dL';
 
     // Convert targets to mmol/L if current unit is mmol/L
@@ -239,14 +319,13 @@ class TrayManager {
       targetUnit = 'mmol/L';
     }
 
-    // Check if mainWindow exists and get visibility state
     const isWindowVisible = this.state.mainWindow
       ? this.state.mainWindow.isVisible() && !this.state.mainWindow.isDestroyed()
       : false;
 
     const contextMenuTemplate: Electron.MenuItemConstructorOptions[] = [
       {
-        label: `Blood Sugar: ${this.state.currentNumber} ${this.state.currentUnit}`,
+        label: `Blood Sugar: ${this.state.displayValue} ${this.state.currentUnit}`,
         enabled: false,
       },
       {
@@ -256,7 +335,6 @@ class TrayManager {
       { type: 'separator' },
     ];
 
-    // Only show "Show App" if window is hidden, and "Hide App" if window is visible
     if (!isWindowVisible) {
       contextMenuTemplate.push({
         label: 'Show App',
@@ -295,14 +373,14 @@ class TrayManager {
   }
 
   // Icon creation methods
-  private createTrayIconWithNumber(number: number = 1): Electron.NativeImage {
+  private createTrayIconWithNumber(displayValue: string): Electron.NativeImage {
     if (this.isUbuntu()) {
       return this.createSimpleNumberIcon();
     }
 
     const buffer = this.createIconBuffer();
-    this.fillBackground(buffer, number);
-    this.drawNumber(buffer, number);
+    this.fillBackground(buffer, this.state.currentNumber);
+    this.drawNumber(buffer, displayValue);
 
     return nativeImage.createFromBuffer(buffer, {
       width: TRAY_ICON_SIZE,
@@ -312,13 +390,10 @@ class TrayManager {
 
   private createSimpleNumberIcon(): Electron.NativeImage {
     const buffer = this.createIconBuffer();
+    const bgColor = this.getBackgroundColorForGlucoseLevel(this.state.currentNumber);
 
-    const bgColor = this.getBackgroundColorForGlucoseLevel(
-      this.state.currentNumber,
-    );
     this.fillRoundedRectangle(buffer, bgColor);
-
-    this.drawSimplifiedNumber(buffer, this.state.currentNumber);
+    this.drawSimplifiedNumber(buffer, this.state.displayValue);
 
     return nativeImage.createFromBuffer(buffer, {
       width: TRAY_ICON_SIZE,
@@ -328,8 +403,8 @@ class TrayManager {
 
   private createBasicIcon(): Electron.NativeImage {
     const buffer = Buffer.alloc(TRAY_ICON_SIZE * TRAY_ICON_SIZE * 4);
-
     const bgColor: RGBAColor = { r: 70, g: 130, b: 200, a: 255 };
+
     this.fillRoundedRectangle(buffer, bgColor);
 
     return nativeImage.createFromBuffer(buffer, {
@@ -352,36 +427,12 @@ class TrayManager {
     const height = TRAY_ICON_SIZE;
     const radius = CORNER_RADIUS;
 
-    for (let i = 0; i < buffer.length; i += 4) {
-      buffer[i] = 0;
-      buffer[i + 1] = 0;
-      buffer[i + 2] = 0;
-      buffer[i + 3] = 0;
-    }
+    // Clear buffer with transparent pixels
+    buffer.fill(0);
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        let isInside = true;
-
-        if (x < radius && y < radius) {
-          const dx = radius - x;
-          const dy = radius - y;
-          isInside = (dx * dx + dy * dy) <= (radius * radius);
-        } else if (x >= width - radius && y < radius) {
-          const dx = x - (width - radius - 1);
-          const dy = radius - y;
-          isInside = (dx * dx + dy * dy) <= (radius * radius);
-        } else if (x < radius && y >= height - radius) {
-          const dx = radius - x;
-          const dy = y - (height - radius - 1);
-          isInside = (dx * dx + dy * dy) <= (radius * radius);
-        } else if (x >= width - radius && y >= height - radius) {
-          const dx = x - (width - radius - 1);
-          const dy = y - (height - radius - 1);
-          isInside = (dx * dx + dy * dy) <= (radius * radius);
-        }
-
-        if (isInside) {
+        if (this.isPointInRoundedRect(x, y, width, height, radius)) {
           const index = (y * width + x) * 4;
           buffer[index] = color.r;
           buffer[index + 1] = color.g;
@@ -392,6 +443,30 @@ class TrayManager {
     }
   }
 
+  private isPointInRoundedRect(x: number, y: number, width: number, height: number, radius: number): boolean {
+    if (x < radius && y < radius) {
+      const dx = radius - x;
+      const dy = radius - y;
+      return (dx * dx + dy * dy) <= (radius * radius);
+    }
+    if (x >= width - radius && y < radius) {
+      const dx = x - (width - radius - 1);
+      const dy = radius - y;
+      return (dx * dx + dy * dy) <= (radius * radius);
+    }
+    if (x < radius && y >= height - radius) {
+      const dx = radius - x;
+      const dy = y - (height - radius - 1);
+      return (dx * dx + dy * dy) <= (radius * radius);
+    }
+    if (x >= width - radius && y >= height - radius) {
+      const dx = x - (width - radius - 1);
+      const dy = y - (height - radius - 1);
+      return (dx * dx + dy * dy) <= (radius * radius);
+    }
+    return true;
+  }
+
   // Color utility methods
   private getBackgroundColorForGlucoseLevel(level: number): RGBAColor {
     let targetLow = this.state.targetLow;
@@ -400,24 +475,15 @@ class TrayManager {
     let highThreshold = HIGH;
 
     if (this.state.currentUnit === 'mmol/L') {
-      targetLow = targetLow / 18;
-      targetHigh = targetHigh / 18;
-      lowThreshold = LOW / 18;
-      highThreshold = HIGH / 18;
+      targetLow /= 18;
+      targetHigh /= 18;
+      lowThreshold /= 18;
+      highThreshold /= 18;
     }
 
-    if (level < lowThreshold) {
-      return { r: 68, g: 68, b: 255, a: 255 };
-    }
-
-    if (level > highThreshold) {
-      return { r: 22, g: 100, b: 249, a: 255 };
-    }
-
-    if (
-      (level < targetLow && level >= lowThreshold) ||
-      (level > targetHigh && level <= highThreshold)
-    ) {
+    if (level < lowThreshold) return { r: 68, g: 68, b: 255, a: 255 };
+    if (level > highThreshold) return { r: 22, g: 100, b: 249, a: 255 };
+    if ((level < targetLow && level >= lowThreshold) || (level > targetHigh && level <= highThreshold)) {
       return { r: 11, g: 200, b: 245, a: 255 };
     }
 
@@ -426,300 +492,99 @@ class TrayManager {
 
   private getColorForGlucoseLevel(level: number): RGBAColor {
     const scale = this.state.currentUnit === 'mmol/L' ? 1 / 18 : 1;
+    const targetLow = this.state.targetLow * scale;
+    const targetHigh = this.state.targetHigh * scale;
+    const lowTh = LOW * scale;
+    const highTh = HIGH * scale;
 
-      const targetLow  = this.state.targetLow  * scale;
-      const targetHigh = this.state.targetHigh * scale;
-      const lowTh      = LOW  * scale;
-      const highTh     = HIGH * scale;
-
-    const inWarning =
-      (level >= lowTh && level < targetLow) ||
-      (level >  targetHigh && level <= highTh);
-
-    return inWarning
-      ? { r: 0,   g: 0,   b: 0,   a: 255 }
-      : { r: 255, g: 255, b: 255, a: 255 };
+    const inWarning = (level >= lowTh && level < targetLow) || (level > targetHigh && level <= highTh);
+    return inWarning ? { r: 0, g: 0, b: 0, a: 255 } : { r: 255, g: 255, b: 255, a: 255 };
   }
 
-
-  // Drawing methods
-  private drawNumber(buffer: Buffer, number: number): void {
-    const numStr =
-      number > MAX_DISPLAY_NUMBER
-        ? MAX_DISPLAY_NUMBER.toString()
-        : number.toString();
+  // Drawing methods for decimal values
+  private drawNumber(buffer: Buffer, displayValue: string): void {
     const textColor = { r: 255, g: 255, b: 255, a: 255 };
+    this.drawDisplayValue(buffer, displayValue, textColor);
+  }
 
-    if (numStr.length === 1) {
-      this.drawSingleDigit(buffer, parseInt(numStr), 6, textColor);
-    } else if (numStr.length === 2) {
-      this.drawTwoDigits(buffer, numStr, textColor);
-    } else if (numStr.length === 3) {
-      this.drawThreeDigits(buffer, numStr, textColor);
+  private drawSimplifiedNumber(buffer: Buffer, displayValue: string): void {
+    const color = this.getColorForGlucoseLevel(this.state.currentNumber);
+    this.drawDisplayValue(buffer, displayValue, color);
+  }
+
+  private drawDisplayValue(buffer: Buffer, displayValue: string, color: RGBAColor): void {
+    const hasDecimal = displayValue.includes('.');
+    const parts = hasDecimal ? displayValue.split('.') : [displayValue];
+
+    if (!hasDecimal) {
+      // Whole number
+      this.drawWholeNumber(buffer, displayValue, color);
+    } else {
+      // Decimal number - draw integer part, decimal point, and fractional part
+      this.drawDecimalNumber(buffer, parts[0], parts[1], color);
     }
   }
 
-  private drawSimplifiedNumber(buffer: Buffer, number: number): void {
-    const numStr = number > MAX_DISPLAY_NUMBER ? '999' : number.toString();
-    const color = this.getColorForGlucoseLevel(parseInt(numStr));
-
-    if (numStr.length === 1) {
-      this.drawSingleDigit(buffer, parseInt(numStr), 5, color);
-    } else if (numStr.length === 2) {
-      this.drawSingleDigit(buffer, parseInt(numStr[0]), 2, color);
-      this.drawSingleDigit(buffer, parseInt(numStr[1]), 8, color);
-    } else if (numStr.length === 3) {
-      this.drawSingleDigit(buffer, parseInt(numStr[0]), 0, color);
-      this.drawSingleDigit(buffer, parseInt(numStr[1]), 5, color);
-      this.drawSingleDigit(buffer, parseInt(numStr[2]), 10, color);
-    }
-  }
-
-  private drawSingleDigit(
-    buffer: Buffer,
-    digit: number,
-    xOffset: number,
-    color: RGBAColor,
-  ): void {
-    switch (digit) {
+  private drawWholeNumber(buffer: Buffer, numberStr: string, color: RGBAColor): void {
+    switch (numberStr.length) {
       case 1:
-        this.drawDigit1(buffer, xOffset, color);
+        this.drawSingleDigit(buffer, numberStr, 6, color);
         break;
       case 2:
-        this.drawDigit2(buffer, xOffset, color);
+        this.drawSingleDigit(buffer, numberStr[0], 3, color);
+        this.drawSingleDigit(buffer, numberStr[1], 8, color);
         break;
       case 3:
-        this.drawDigit3(buffer, xOffset, color);
-        break;
-      case 4:
-        this.drawDigit4(buffer, xOffset, color);
-        break;
-      case 5:
-        this.drawDigit5(buffer, xOffset, color);
-        break;
-      case 6:
-        this.drawDigit6(buffer, xOffset, color);
-        break;
-      case 7:
-        this.drawDigit7(buffer, xOffset, color);
-        break;
-      case 8:
-        this.drawDigit8(buffer, xOffset, color);
-        break;
-      case 9:
-        this.drawDigit9(buffer, xOffset, color);
-        break;
-      case 0:
-        this.drawDigit0(buffer, xOffset, color);
+        this.drawSingleDigit(buffer, numberStr[0], 1, color);
+        this.drawSingleDigit(buffer, numberStr[1], 6, color);
+        this.drawSingleDigit(buffer, numberStr[2], 11, color);
         break;
     }
   }
 
-  private drawTwoDigits(
-    buffer: Buffer,
-    digits: string,
-    color: RGBAColor,
-  ): void {
-    const digit1 = parseInt(digits[0]);
-    const digit2 = parseInt(digits[1]);
-    this.drawSingleDigit(buffer, digit1, 3, color);
-    this.drawSingleDigit(buffer, digit2, 8, color);
+  private drawDecimalNumber(buffer: Buffer, integerPart: string, fractionalPart: string, color: RGBAColor): void {
+    const totalLength = integerPart.length + fractionalPart.length + 1; // +1 for decimal point
+
+    // Calculate starting position based on total length
+    let startX = 1;
+    if (totalLength === 3) startX = 3; // e.g., "3.3"
+    if (totalLength === 4) startX = 1; // e.g., "33.3"
+    if (totalLength >= 5) startX = 0; // e.g., "33.35"
+
+    let currentX = startX;
+
+    // Draw integer part
+    for (let i = 0; i < integerPart.length; i++) {
+      this.drawSingleDigit(buffer, integerPart[i], currentX, color);
+      currentX += 4;
+    }
+
+    // Draw decimal point
+    this.drawDecimalPoint(buffer, currentX, color);
+    currentX += 2;
+
+    // Draw fractional part
+    for (let i = 0; i < fractionalPart.length; i++) {
+      this.drawSingleDigit(buffer, fractionalPart[i], currentX, color);
+      currentX += 4;
+    }
   }
 
-  private drawThreeDigits(
-    buffer: Buffer,
-    digits: string,
-    color: RGBAColor,
-  ): void {
-    const digit1 = parseInt(digits[0]);
-    const digit2 = parseInt(digits[1]);
-    const digit3 = parseInt(digits[2]);
-    this.drawSingleDigit(buffer, digit1, 1, color);
-    this.drawSingleDigit(buffer, digit2, 6, color);
-    this.drawSingleDigit(buffer, digit3, 10, color);
+  private drawSingleDigit(buffer: Buffer, digit: string, xOffset: number, color: RGBAColor): void {
+    const pattern = DIGIT_PATTERNS[digit];
+    if (pattern) {
+      pattern.forEach(({ x, y }) => this.setPixel(buffer, x + xOffset, y, color));
+    }
   }
 
-  // Individual digit drawing methods
-  private drawDigit0(buffer: Buffer, xOffset: number, color: RGBAColor): void {
-    const pixels: PixelCoordinates[] = [
-      { x: xOffset + 1, y: 4 }, { x: xOffset + 2, y: 4 },
-      { x: xOffset, y: 5 }, { x: xOffset + 3, y: 5 },
-      { x: xOffset, y: 6 }, { x: xOffset + 3, y: 6 },
-      { x: xOffset, y: 7 }, { x: xOffset + 3, y: 7 },
-      { x: xOffset, y: 8 }, { x: xOffset + 3, y: 8 },
-      { x: xOffset, y: 9 }, { x: xOffset + 3, y: 9 },
-      { x: xOffset + 1, y: 10 }, { x: xOffset + 2, y: 10 },
-    ];
-    pixels.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
+  private drawDecimalPoint(buffer: Buffer, xOffset: number, color: RGBAColor): void {
+    const pattern = DIGIT_PATTERNS['dot'];
+    if (pattern) {
+      pattern.forEach(({ x, y }) => this.setPixel(buffer, x + xOffset, y, color));
+    }
   }
 
-  private drawDigit1(buffer: Buffer, xOffset: number, color: RGBAColor): void {
-    const pixels: PixelCoordinates[] = [
-      { x: xOffset + 1, y: 4 },
-      { x: xOffset, y: 5 },
-      { x: xOffset + 1, y: 5 },
-      { x: xOffset + 1, y: 6 },
-      { x: xOffset + 1, y: 7 },
-      { x: xOffset + 1, y: 8 },
-      { x: xOffset + 1, y: 9 },
-      { x: xOffset, y: 10 },
-      { x: xOffset + 1, y: 10 },
-      { x: xOffset + 2, y: 10 },
-    ];
-    pixels.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
-  }
-
-  private drawDigit2(buffer: Buffer, xOffset: number, color: RGBAColor): void {
-    const pixels: PixelCoordinates[] = [
-      { x: xOffset, y: 4 },
-      { x: xOffset + 1, y: 4 },
-      { x: xOffset + 2, y: 4 },
-      { x: xOffset + 3, y: 5 },
-      { x: xOffset + 2, y: 6 },
-      { x: xOffset + 1, y: 7 },
-      { x: xOffset, y: 8 },
-      { x: xOffset, y: 9 },
-      { x: xOffset + 1, y: 9 },
-      { x: xOffset + 2, y: 9 },
-      { x: xOffset + 3, y: 9 },
-    ];
-    pixels.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
-  }
-
-  private drawDigit3(buffer: Buffer, xOffset: number, color: RGBAColor): void {
-    const pixels: PixelCoordinates[] = [
-      { x: xOffset + 1, y: 4 },
-      { x: xOffset + 2, y: 4 },
-      { x: xOffset, y: 5 },
-      { x: xOffset + 3, y: 5 },
-      { x: xOffset + 3, y: 6 },
-      { x: xOffset + 1, y: 7 },
-      { x: xOffset + 2, y: 7 },
-      { x: xOffset + 3, y: 8 },
-      { x: xOffset, y: 9 },
-      { x: xOffset + 3, y: 9 },
-      { x: xOffset + 1, y: 10 },
-      { x: xOffset + 2, y: 10 },
-    ];
-    pixels.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
-  }
-
-  private drawDigit4(buffer: Buffer, xOffset: number, color: RGBAColor): void {
-    const pixels: PixelCoordinates[] = [
-      { x: xOffset + 2, y: 4 },
-      { x: xOffset + 1, y: 5 },
-      { x: xOffset + 2, y: 5 },
-      { x: xOffset, y: 6 },
-      { x: xOffset + 2, y: 6 },
-      { x: xOffset, y: 7 },
-      { x: xOffset + 1, y: 7 },
-      { x: xOffset + 2, y: 7 },
-      { x: xOffset + 3, y: 7 },
-      { x: xOffset + 2, y: 8 },
-      { x: xOffset + 2, y: 9 },
-      { x: xOffset + 2, y: 10 },
-    ];
-    pixels.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
-  }
-
-  private drawDigit5(buffer: Buffer, xOffset: number, color: RGBAColor): void {
-    const pixels: PixelCoordinates[] = [
-      { x: xOffset, y: 4 },
-      { x: xOffset + 1, y: 4 },
-      { x: xOffset + 2, y: 4 },
-      { x: xOffset + 3, y: 4 },
-      { x: xOffset, y: 5 },
-      { x: xOffset, y: 6 },
-      { x: xOffset, y: 7 },
-      { x: xOffset + 1, y: 7 },
-      { x: xOffset + 2, y: 7 },
-      { x: xOffset + 3, y: 8 },
-      { x: xOffset + 3, y: 9 },
-      { x: xOffset, y: 10 },
-      { x: xOffset + 1, y: 10 },
-      { x: xOffset + 2, y: 10 },
-    ];
-    pixels.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
-  }
-
-  private drawDigit6(buffer: Buffer, xOffset: number, color: RGBAColor): void {
-    const pixels: PixelCoordinates[] = [
-      { x: xOffset + 1, y: 4 },
-      { x: xOffset + 2, y: 4 },
-      { x: xOffset, y: 5 },
-      { x: xOffset, y: 6 },
-      { x: xOffset + 1, y: 6 },
-      { x: xOffset + 2, y: 6 },
-      { x: xOffset, y: 7 },
-      { x: xOffset + 3, y: 7 },
-      { x: xOffset, y: 8 },
-      { x: xOffset + 3, y: 8 },
-      { x: xOffset, y: 9 },
-      { x: xOffset + 3, y: 9 },
-      { x: xOffset + 1, y: 10 },
-      { x: xOffset + 2, y: 10 },
-    ];
-    pixels.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
-  }
-
-  private drawDigit7(buffer: Buffer, xOffset: number, color: RGBAColor): void {
-    const pixels: PixelCoordinates[] = [
-      { x: xOffset, y: 4 },
-      { x: xOffset + 1, y: 4 },
-      { x: xOffset + 2, y: 4 },
-      { x: xOffset + 3, y: 4 },
-      { x: xOffset + 3, y: 5 },
-      { x: xOffset + 2, y: 6 },
-      { x: xOffset + 2, y: 7 },
-      { x: xOffset + 2, y: 8 },
-      { x: xOffset + 2, y: 9 },
-      { x: xOffset + 2, y: 10 },
-    ];
-    pixels.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
-  }
-
-  private drawDigit8(buffer: Buffer, xOffset: number, color: RGBAColor): void {
-    const pixels: PixelCoordinates[] = [
-      { x: xOffset + 1, y: 4 },
-      { x: xOffset + 2, y: 4 },
-      { x: xOffset, y: 5 },
-      { x: xOffset + 3, y: 5 },
-      { x: xOffset + 1, y: 6 },
-      { x: xOffset + 2, y: 6 },
-      { x: xOffset, y: 7 },
-      { x: xOffset + 3, y: 7 },
-      { x: xOffset, y: 8 },
-      { x: xOffset + 3, y: 8 },
-      { x: xOffset + 1, y: 9 },
-      { x: xOffset + 2, y: 9 },
-    ];
-    pixels.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
-  }
-
-  private drawDigit9(buffer: Buffer, xOffset: number, color: RGBAColor): void {
-    const pixels: PixelCoordinates[] = [
-      { x: xOffset + 1, y: 4 },
-      { x: xOffset + 2, y: 4 },
-      { x: xOffset, y: 5 },
-      { x: xOffset + 3, y: 5 },
-      { x: xOffset, y: 6 },
-      { x: xOffset + 3, y: 6 },
-      { x: xOffset + 1, y: 7 },
-      { x: xOffset + 2, y: 7 },
-      { x: xOffset + 3, y: 7 },
-      { x: xOffset + 3, y: 8 },
-      { x: xOffset + 2, y: 9 },
-      { x: xOffset + 1, y: 10 },
-    ];
-    pixels.forEach(({ x, y }) => this.setPixel(buffer, x, y, color));
-  }
-
-  private setPixel(
-    buffer: Buffer,
-    x: number,
-    y: number,
-    color: RGBAColor,
-  ): void {
+  private setPixel(buffer: Buffer, x: number, y: number, color: RGBAColor): void {
     if (x >= 0 && x < TRAY_ICON_SIZE && y >= 0 && y < TRAY_ICON_SIZE) {
       const index = (y * TRAY_ICON_SIZE + x) * 4;
       buffer[index] = color.r;
@@ -733,14 +598,10 @@ class TrayManager {
 // Create singleton instance
 const trayManager = new TrayManager();
 
-export const createTray = (window: BrowserWindow) =>
-  trayManager.createTray(window);
-export const updateTrayNumber = (
-  newNumber: number,
-  unit: string,
-  targetLow?: number,
-  targetHigh?: number,
-) => trayManager.updateTrayNumber(newNumber, unit, targetLow, targetHigh);
+// Export public API
+export const createTray = (window: BrowserWindow) => trayManager.createTray(window);
+export const updateTrayNumber = (newNumber: number, unit: string, targetLow?: number, targetHigh?: number) =>
+  trayManager.updateTrayNumber(newNumber, unit, targetLow, targetHigh);
 export const updateTrayTargets = (targetLow: number, targetHigh: number) =>
   trayManager.updateTargets(targetLow, targetHigh);
 export const destroyTray = () => trayManager.destroyTray();

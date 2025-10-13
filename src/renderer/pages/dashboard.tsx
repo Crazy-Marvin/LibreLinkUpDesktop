@@ -45,7 +45,7 @@ export default function DashboardPage() {
       const targetLow = graphData?.targetLow ?? 70;
       const targetHigh = graphData?.targetHigh ?? 180;
 
-      updateTrayNumber(Math.round(glucoseValue), targetLow, targetHigh);
+      updateTrayNumber(glucoseValue, targetLow, targetHigh);
     } else {
       console.log('No glucose data available for tray update');
     }
