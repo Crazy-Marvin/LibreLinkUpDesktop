@@ -3,6 +3,7 @@ import {
   Menu,
   BrowserWindow,
   MenuItemConstructorOptions,
+  globalShortcut,
 } from "electron"
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
@@ -33,6 +34,9 @@ export default class MenuBuilder {
     const menu = Menu.buildFromTemplate(template)
     Menu.setApplicationMenu(menu)
 
+    // Add global keyboard shortcuts for developer tools in production
+    this.setupGlobalShortcuts()
+
     return menu
   }
 
@@ -49,6 +53,25 @@ export default class MenuBuilder {
         },
       ]).popup({ window: this.mainWindow })
     })
+  }
+
+  setupGlobalShortcuts(): void {
+    // Register global shortcuts for developer tools
+    // These work in both development and production
+    const shortcuts = process.platform === 'darwin'
+      ? ['Command+Shift+I']
+      : ['Ctrl+Shift+I']
+
+    shortcuts.forEach(shortcut => {
+      globalShortcut.register(shortcut, () => {
+        this.mainWindow.webContents.toggleDevTools()
+      })
+    })
+  }
+
+  cleanupGlobalShortcuts(): void {
+    // Unregister all global shortcuts
+    globalShortcut.unregisterAll()
   }
 
   buildDarwinTemplate(): MenuItemConstructorOptions[] {
@@ -111,7 +134,7 @@ export default class MenuBuilder {
         },
         {
           label: 'Toggle Developer Tools',
-          accelerator: 'Alt+Command+I',
+          accelerator: 'Command+Shift+I',
           click: () => {
             this.mainWindow.webContents.toggleDevTools()
           },
@@ -128,6 +151,7 @@ export default class MenuBuilder {
             this.mainWindow.setFullScreen(!this.mainWindow.isFullScreen())
           },
         },
+        // Developer tools are available via Cmd+Shift+I shortcut but not shown in menu
       ],
     }
     const subMenuWindow: DarwinMenuItemConstructorOptions = {
@@ -195,7 +219,7 @@ export default class MenuBuilder {
                 },
                 {
                   label: 'Toggle &Developer Tools',
-                  accelerator: 'Alt+Ctrl+I',
+                  accelerator: 'Ctrl+Shift+I',
                   click: () => {
                     this.mainWindow.webContents.toggleDevTools()
                   },
@@ -211,6 +235,7 @@ export default class MenuBuilder {
                     )
                   },
                 },
+                // Developer tools are available via Ctrl+Shift+I shortcut but not shown in menu
               ],
       },
     ]

@@ -12,7 +12,7 @@ import { registerLogoutHandler, destroyLogoutHandler } from "./logoutHandler";
 import { registerRefreshHandler, destroyRefreshHandler } from "./refreshHandler";
 import { registerAlertHandler, destroyAlertHandler } from "./alertHandler";
 import { registerTrayHandler, destroyTrayHandler, setTrayMainWindow } from "./trayHandler";
-import { destroyTray } from './../renderer/lib/trayManager';
+import { destroyTray } from './trayManager';
 
 // class AppUpdater {
 //   constructor() {
@@ -23,6 +23,7 @@ import { destroyTray } from './../renderer/lib/trayManager';
 // }
 
 let mainWindow: BrowserWindow | null = null
+let menuBuilder: MenuBuilder | null = null
 let isQuitting = false
 
 if (process.env.NODE_ENV === 'production') {
@@ -114,7 +115,7 @@ const createWindow = async () => {
    isQuitting = true;
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow)
+  menuBuilder = new MenuBuilder(mainWindow)
   menuBuilder.buildMenu()
 
   // Open urls in the user's browser
@@ -198,6 +199,10 @@ app.on('window-all-closed', () => {
   destroyAlertHandler();
   destroyTrayHandler();
   destroyTray();
+  // Cleanup global shortcuts
+  if (menuBuilder) {
+    menuBuilder.cleanupGlobalShortcuts();
+  }
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
   if (process.platform !== 'darwin') {
