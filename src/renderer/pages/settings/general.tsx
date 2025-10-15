@@ -78,11 +78,11 @@ export default function SettingsGeneralPage() {
 
   return (
     <SettingsLayout>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div>
-          <p className="text-foreground/30 text-xs mb-2">{t('Theme')}</p>
+      <div className="space-y-6">
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Theme')}</p>
           <Select onValueChange={setAndRefreshTheme} defaultValue={theme ?? ''}>
-            <SelectTrigger>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t("SelectTheme")} />
             </SelectTrigger>
             <SelectContent>
@@ -94,10 +94,11 @@ export default function SettingsGeneralPage() {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <p className="text-foreground/30 text-xs mb-2">{t('Country')}</p>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Country')}</p>
           <Select onValueChange={setCountry} defaultValue={country ?? ''}>
-            <SelectTrigger>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t("SelectCountry")} />
             </SelectTrigger>
             <SelectContent>
@@ -109,10 +110,11 @@ export default function SettingsGeneralPage() {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <p className="text-foreground/30 text-xs mb-2">{t('Language')}</p>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Language')}</p>
           <Select onValueChange={setAndRefreshLanguage} defaultValue={language ?? ''}>
-            <SelectTrigger>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t("SelectLanguage")} />
             </SelectTrigger>
             <SelectContent>
@@ -124,10 +126,11 @@ export default function SettingsGeneralPage() {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <p className="text-foreground/30 text-xs mb-2">{t('WindowMode')}</p>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('WindowMode')}</p>
           <Select key={currentWindowMode} onValueChange={handleSetWindowMode} defaultValue={currentWindowMode ?? 'windowed'}>
-            <SelectTrigger>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={("SelectMode")} />
             </SelectTrigger>
             <SelectContent>
@@ -139,10 +142,11 @@ export default function SettingsGeneralPage() {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <p className="text-foreground/30 text-xs mb-2">{t('Unit')}</p>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Unit')}</p>
           <Select onValueChange={handleSetResultUnit} defaultValue={resultUnit ?? 'mg/dL'}>
-            <SelectTrigger>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={("SelectUnit")} />
             </SelectTrigger>
             <SelectContent>
@@ -154,18 +158,14 @@ export default function SettingsGeneralPage() {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <p className="text-foreground/30 text-xs mb-2">&nbsp;</p>
-          <div className="flex items-center justify-between rounded-md border px-3 py-1.5">
-            <span className="text-sm leading-none"> {t('Show glucose values in tray')} </span>
-            <div className="scale-90 origin-right">
-              <ToggleSwitch
-                key={toggleSwitchKey}
-                checked={trayVisible}
-                onChange={handleToggleTray}
-              />
-            </div>
-          </div>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Show glucose values in tray')}</p>
+          <ToggleSwitch
+            key={toggleSwitchKey}
+            checked={trayVisible}
+            onChange={handleToggleTray}
+          />
         </div>
       </div>
     </SettingsLayout>
