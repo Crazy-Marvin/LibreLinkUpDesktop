@@ -142,7 +142,7 @@ const getWindowOptions = (windowMode: 'overlay' | 'windowed' | 'overlayTranspare
     show: false,
     minWidth: 200,
     minHeight: 45,
-    icon: getAssetPath('icon.png'),
+    // icon: getAssetPath('icon.png'),
     webPreferences: {
       webSecurity: false,
       preload: app.isPackaged
