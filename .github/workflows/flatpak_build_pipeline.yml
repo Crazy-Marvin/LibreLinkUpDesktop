@@ -2,6 +2,8 @@ name: Combined Flatpak Build and Sync
 
 on:
   push:
+    tags:
+      - 'flathubbuild-*' 
   workflow_dispatch:
 
 jobs:
