@@ -107,7 +107,8 @@ const createWindow = async () => {
 
 
   mainWindow.on('closed', () => {
-    mainWindow = null
+    mainWindow = null;
+    destroyTray();
   })
 
   app.on('before-quit', () => {
