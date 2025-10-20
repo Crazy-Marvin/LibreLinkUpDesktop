@@ -181,7 +181,6 @@ class TrayManager {
 
       for (const iconPath of possiblePaths) {
         if (fs.existsSync(iconPath)) {
-          console.log('Found icon at:', iconPath);
           return nativeImage.createFromPath(iconPath);
         }
       }
@@ -199,13 +198,10 @@ class TrayManager {
           const pngFile = files.find(file => file.endsWith('.png'));
           if (pngFile) {
             const iconPath = path.join(assetsDir, pngFile);
-            console.log('Found PNG icon:', iconPath);
             return nativeImage.createFromPath(iconPath);
           }
         }
       }
-
-      console.log('No icon file found, using fallback icon');
       throw new Error('No PNG icon found');
     } catch (error) {
       console.error('Failed to load icon from file:', error);
@@ -254,7 +250,6 @@ class TrayManager {
       this.setupTrayEventListeners();
       this.updateTrayContextMenu();
       this.state.isCreated = true;
-      console.log('Tray created successfully');
     } catch (error) {
       console.error('Failed to create tray instance:', error);
       this.state.isCreated = false;
