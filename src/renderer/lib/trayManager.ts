@@ -616,9 +616,9 @@ class TrayManager {
       for (let x = 0; x < width; x++) {
         if (this.isPointInRoundedRect(x, y, width, height, radius)) {
           const index = (y * width + x) * 4;
-          buffer[index] = color.r;
+          buffer[index] = color.b;
           buffer[index + 1] = color.g;
-          buffer[index + 2] = color.b;
+          buffer[index + 2] = color.r;
           buffer[index + 3] = color.a ?? 255;
         }
       }
@@ -650,37 +650,37 @@ class TrayManager {
   }
 
   // Color utility methods
-private getBackgroundColorForGlucoseLevel(level: number): RGBAColor {
-  const targetLow = this.state.targetLow;
-  const targetHigh = this.state.targetHigh;
+  private getBackgroundColorForGlucoseLevel(level: number): RGBAColor {
+    const targetLow = this.state.targetLow;
+    const targetHigh = this.state.targetHigh;
 
-  // Convert level to mg/dL for consistent comparison if unit is mmol/L
-  const levelInMgPerDl = this.state.currentUnit === 'mmol/L' ? level * 18 : level;
+    // Convert level to mg/dL for consistent comparison if unit is mmol/L
+    const levelInMgPerDl = this.state.currentUnit === 'mmol/L' ? level * 18 : level;
 
-  if (levelInMgPerDl < LOW) {
-    return { r: 239, g: 68, b: 68, a: 255 }; // bg-red-500
+    if (levelInMgPerDl < LOW) {
+      return { r: 239, g: 68, b: 68, a: 255 }; // bg-red-500
+    }
+
+    if (levelInMgPerDl > HIGH) {
+      return { r: 249, g: 115, b: 22, a: 255 }; // bg-orange-500
+    }
+
+    if ((levelInMgPerDl < targetLow && levelInMgPerDl >= LOW) ||
+        (levelInMgPerDl > targetHigh && levelInMgPerDl <= HIGH)) {
+      return { r: 234, g: 179, b: 8, a: 255 }; // bg-yellow-500
+    }
+
+    return { r: 34, g: 197, b: 94, a: 255 }; // bg-green-500
   }
 
-  if (levelInMgPerDl > HIGH) {
-    return { r: 249, g: 115, b: 22, a: 255 }; // bg-orange-500
+  private getColorForGlucoseLevel(level: number): RGBAColor {
+    return { r: 255, g: 255, b: 255, a: 255 };
   }
 
-  if ((levelInMgPerDl < targetLow && levelInMgPerDl >= LOW) ||
-      (levelInMgPerDl > targetHigh && levelInMgPerDl <= HIGH)) {
-    return { r: 8, g: 179, b: 234, a: 255 }; // bg-yellow-500
+  // Add helper method to convert RGB to CSS string
+  private rgbToCss(color: RGBAColor): string {
+    return `rgb(${color.r}, ${color.g}, ${color.b})`;
   }
-
-  return { r: 34, g: 197, b: 94, a: 255 }; // bg-green-500
-}
-
-private getColorForGlucoseLevel(level: number): RGBAColor {
-  return { r: 255, g: 255, b: 255, a: 255 };
-}
-
-// Add helper method to convert RGB to CSS string
-private rgbToCss(color: RGBAColor): string {
-  return `rgb(${color.r}, ${color.g}, ${color.b})`;
-}
 
   // Drawing methods for decimal values
   private drawNumber(buffer: Buffer, displayValue: string): void {
@@ -768,9 +768,9 @@ private rgbToCss(color: RGBAColor): string {
   private setPixel(buffer: Buffer, x: number, y: number, color: RGBAColor): void {
     if (x >= 0 && x < TRAY_ICON_SIZE && y >= 0 && y < TRAY_ICON_SIZE) {
       const index = (y * TRAY_ICON_SIZE + x) * 4;
-      buffer[index] = color.r;
+      buffer[index] = color.b;
       buffer[index + 1] = color.g;
-      buffer[index + 2] = color.b;
+      buffer[index + 2] = color.r;
       buffer[index + 3] = color.a ?? 255;
     }
   }
