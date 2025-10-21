@@ -1,20 +1,15 @@
-import { Tray, Menu, nativeImage, BrowserWindow } from 'electron';
+import { Tray, Menu, nativeImage, BrowserWindow, app } from 'electron';
+import * as path from 'path';
+import * as fs from 'fs';
 
 // Constants
-const TRAY_ICON_SIZE = 16;
 const MAX_DISPLAY_NUMBER = 999;
 const MIN_DISPLAY_NUMBER = 0;
-const CORNER_RADIUS = 3;
 
 const LOW = 70;  // Hypoglycemia threshold (mg/dL)
 const HIGH = 240; // Hyperglycemia threshold (mg/dL)
 
 // Interfaces
-interface PixelCoordinates {
-  x: number;
-  y: number;
-}
-
 interface RGBAColor {
   r: number;
   g: number;
@@ -34,68 +29,6 @@ interface TrayManagerState {
   isCreated: boolean;
   trendArrow: number;
 }
-
-// Simple orange circle icon
-const createLogoIcon = (): Electron.NativeImage => {
-  const size = TRAY_ICON_SIZE;
-  const buffer = Buffer.alloc(size * size * 4);
-
-  // Fill with transparent background
-  for (let i = 0; i < buffer.length; i += 4) {
-    buffer[i] = 0;     // B
-    buffer[i + 1] = 0; // G
-    buffer[i + 2] = 0; // R
-    buffer[i + 3] = 0; // A (transparent)
-  }
-
-  const centerX = size / 2;
-  const centerY = size / 2;
-  const radius = 6; // Slightly smaller than half size
-
-  // Draw orange circle
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const dx = x - centerX;
-      const dy = y - centerY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance <= radius) {
-        const index = (y * size + x) * 4;
-
-        // Orange color #F30 (255, 51, 0)
-        // Buffer format: [Blue, Green, Red, Alpha]
-        buffer[index] = 0;      // Blue
-        buffer[index + 1] = 51; // Green
-        buffer[index + 2] = 255; // Red
-        buffer[index + 3] = 255; // Alpha (opaque)
-      }
-    }
-  }
-
-  return nativeImage.createFromBuffer(buffer, {
-    width: size,
-    height: size
-  });
-};
-
-// Alternative: Use a solid colored square (most reliable)
-const createSimpleIcon = (): Electron.NativeImage => {
-  const size = TRAY_ICON_SIZE;
-  const buffer = Buffer.alloc(size * size * 4);
-
-  // Fill entire buffer with orange color
-  for (let i = 0; i < buffer.length; i += 4) {
-    buffer[i] = 0;      // Blue
-    buffer[i + 1] = 51; // Green
-    buffer[i + 2] = 255; // Red
-    buffer[i + 3] = 255; // Alpha
-  }
-
-  return nativeImage.createFromBuffer(buffer, {
-    width: size,
-    height: size
-  });
-};
 
 const TREND_ARROW_MAP: Record<number, string> = {
   1: `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.14645 2.14645C7.34171 1.95118 7.65829 1.95118 7.85355 2.14645L11.8536 6.14645C12.0488 6.34171 12.0488 6.65829 11.8536 6.85355C11.6583 7.04882 11.3417 7.04882 11.1464 6.85355L8 3.70711L8 12.5C8 12.7761 7.77614 13 7.5 13C7.22386 13 7 12.7761 7 12.5L7 3.70711L3.85355 6.85355C3.65829 7.04882 3.34171 7.04882 3.14645 6.85355C2.95118 6.65829 2.95118 6.34171 3.14645 6.14645L7.14645 2.14645Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path></svg>`,
@@ -132,14 +65,6 @@ class TrayManager {
     if (this.state.tray && this.state.currentNumber !== 0) {
       this.updateExistingTray();
     }
-  }
-
-  // Platform detection
-  private isUbuntu(): boolean {
-    return process.platform === 'linux' &&
-           (process.env.XDG_CURRENT_DESKTOP?.includes('GNOME') ||
-            process.env.XDG_CURRENT_DESKTOP?.includes('Unity') ||
-            /ubuntu/i.test(process.env.OS || ''));
   }
 
   // Format number for display: 33.345 → 33.35, 3.3 → 3.3, 3.0 → 3
@@ -238,14 +163,89 @@ class TrayManager {
 
   private createStandardTray(): void {
     try {
-      // Try the circle first, fallback to solid square if needed
-      const trayIcon = createLogoIcon();
+      const trayIcon = this.createIconFromFile();
       this.createTrayInstance(trayIcon);
     } catch (error) {
-      console.error('Circle icon failed, trying solid icon:', error);
-      const trayIcon = createSimpleIcon();
+      console.error('PNG icon failed, trying fallback icon:', error);
+      const trayIcon = this.createSimpleIcon();
       this.createTrayInstance(trayIcon);
     }
+  }
+
+  private createIconFromFile(): Electron.NativeImage {
+    try {
+      // Try different possible locations for the icon file
+      const possiblePaths = [
+        path.join(app.getAppPath(), 'assets', 'logo.png'),
+      ];
+
+      for (const iconPath of possiblePaths) {
+        if (fs.existsSync(iconPath)) {
+          console.log('Found icon at:', iconPath);
+          return nativeImage.createFromPath(iconPath);
+        }
+      }
+
+      const assetsDirs = [
+        path.join(app.getAppPath(), 'assets'),
+        path.join(process.resourcesPath, 'assets'),
+        path.join(__dirname, 'assets'),
+        path.join(__dirname, '..', 'assets'),
+      ];
+
+      for (const assetsDir of assetsDirs) {
+        if (fs.existsSync(assetsDir)) {
+          const files = fs.readdirSync(assetsDir);
+          const pngFile = files.find(file => file.endsWith('.png'));
+          if (pngFile) {
+            const iconPath = path.join(assetsDir, pngFile);
+            console.log('Found PNG icon:', iconPath);
+            return nativeImage.createFromPath(iconPath);
+          }
+        }
+      }
+
+      console.log('No icon file found, using fallback icon');
+      throw new Error('No PNG icon found');
+    } catch (error) {
+      console.error('Failed to load icon from file:', error);
+      throw error;
+    }
+  }
+
+  private createSimpleIcon(): Electron.NativeImage {
+    const size = 16;
+    const buffer = Buffer.alloc(size * size * 4);
+
+    // Fill with transparent background
+    buffer.fill(0);
+
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = 6;
+
+    // Draw orange circle
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance <= radius) {
+          const index = (y * size + x) * 4;
+          // Orange color #F30 (255, 51, 0) in BGRA format
+          buffer[index] = 0;      // Blue
+          buffer[index + 1] = 51; // Green
+          buffer[index + 2] = 255; // Red
+          buffer[index + 3] = 255; // Alpha
+        }
+      }
+    }
+
+    return nativeImage.createFromBuffer(buffer, {
+      width: size,
+      height: size
+    });
   }
 
   private createTrayInstance(icon: Electron.NativeImage): void {
@@ -446,13 +446,19 @@ class TrayManager {
     if (!this.state.tray || !this.state.isCreated) return;
 
     try {
-      const newIcon = createLogoIcon();
+      const newIcon = this.createIconFromFile();
       this.state.tray.setImage(newIcon);
       this.updateTooltipContent();
       this.updateTrayContextMenu();
       this.notifyRenderer();
     } catch (error) {
       console.error('Error updating tray icon:', error);
+      try {
+        const newIcon = this.createSimpleIcon();
+        this.state.tray.setImage(newIcon);
+      } catch (fallbackError) {
+        console.error('Fallback icon also failed:', fallbackError);
+      }
       this.updateTooltipContent();
       this.updateTrayContextMenu();
     }
@@ -508,7 +514,7 @@ class TrayManager {
 
     contextMenuTemplate.push(
       { type: 'separator' },
-      { label: 'Quit', click: () => require('electron').app.quit() }
+      { label: 'Quit', click: () => app.quit() }
     );
 
     const contextMenu = Menu.buildFromTemplate(contextMenuTemplate);
