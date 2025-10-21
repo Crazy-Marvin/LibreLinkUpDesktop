@@ -176,7 +176,7 @@ class TrayManager {
     try {
       // Try different possible locations for the icon file
       const possiblePaths = [
-        path.join(app.getAppPath(), 'assets', 'logo.png'),
+        path.join(app.getAppPath(), 'assets', 'tray-logo.png'),
       ];
 
       for (const iconPath of possiblePaths) {
