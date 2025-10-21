@@ -667,7 +667,7 @@ private getBackgroundColorForGlucoseLevel(level: number): RGBAColor {
 
   if ((levelInMgPerDl < targetLow && levelInMgPerDl >= LOW) ||
       (levelInMgPerDl > targetHigh && levelInMgPerDl <= HIGH)) {
-    return { r: 234, g: 179, b: 8, a: 255 }; // bg-yellow-500
+    return { r: 8, g: 179, b: 234, a: 255 }; // bg-yellow-500
   }
 
   return { r: 34, g: 197, b: 94, a: 255 }; // bg-green-500
