@@ -1,9 +1,9 @@
-name: Combined Flatpak Build and Sync
+name: Flatpak Build and Sync
 
 on:
   push:
     tags:
-      - 'flathubbuild-*' 
+      - 'flathubbuild-*'
   workflow_dispatch:
 
 jobs:
