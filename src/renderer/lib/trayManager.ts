@@ -174,34 +174,78 @@ class TrayManager {
 
   private createIconFromFile(): Electron.NativeImage {
     try {
-      // Try different possible locations for the icon file
-      const possiblePaths = [
-        path.join(app.getAppPath(), 'assets', 'tray-logo.png'),
-      ];
-
-      for (const iconPath of possiblePaths) {
-        if (fs.existsSync(iconPath)) {
-          return nativeImage.createFromPath(iconPath);
-        }
-      }
-
-      const assetsDirs = [
+      // Try multiple possible asset directories for both dev and production
+      const possibleAssetDirs = [
         path.join(app.getAppPath(), 'assets'),
         path.join(process.resourcesPath, 'assets'),
         path.join(__dirname, 'assets'),
         path.join(__dirname, '..', 'assets'),
+        path.join(__dirname, '..', '..', 'assets'),
+        path.join(process.cwd(), 'assets'),
       ];
 
-      for (const assetsDir of assetsDirs) {
+      for (const assetsDir of possibleAssetDirs) {
         if (fs.existsSync(assetsDir)) {
-          const files = fs.readdirSync(assetsDir);
-          const pngFile = files.find(file => file.endsWith('.png'));
-          if (pngFile) {
-            const iconPath = path.join(assetsDir, pngFile);
-            return nativeImage.createFromPath(iconPath);
+          console.log('Checking assets directory:', assetsDir);
+
+          // Platform-specific icon loading
+          let iconPath: string | null = null;
+
+          switch (process.platform) {
+            case 'darwin': // macOS
+              // Use 16x16 icon as the standard for macOS tray
+              const macIconPath16 = path.join(assetsDir, 'tray-logo-16.png');
+              const macIconPath16Retina = path.join(assetsDir, 'tray-logo-16@2x.png');
+
+              if (fs.existsSync(macIconPath16)) {
+                iconPath = macIconPath16;
+                console.log('Found macOS 16x16 icon:', macIconPath16);
+
+                // Check for @2x version for Retina displays
+                if (fs.existsSync(macIconPath16Retina)) {
+                  console.log('Found macOS 16x16@2x icon for Retina:', macIconPath16Retina);
+                }
+              }
+              break;
+
+            default:
+              // Use original tray-logo.png for Windows and Linux
+              const originalIconPath = path.join(assetsDir, 'tray-logo.png');
+              if (fs.existsSync(originalIconPath)) {
+                iconPath = originalIconPath;
+                console.log('Found original icon:', originalIconPath);
+              }
+              break;
+          }
+
+          // If platform-specific icon found, use it
+          if (iconPath) {
+            const icon = nativeImage.createFromPath(iconPath);
+
+            // For macOS, try to add @2x version for Retina displays
+            if (process.platform === 'darwin' && iconPath.includes('tray-logo-16.png')) {
+              const retinaPath = iconPath.replace('tray-logo-16.png', 'tray-logo-16@2x.png');
+              if (fs.existsSync(retinaPath)) {
+                console.log('Adding @2x version for Retina display:', retinaPath);
+                // Electron will automatically use the @2x version on Retina displays
+                // when both files exist with the same base name
+              }
+            }
+
+            // Don't use template mode - it makes colored icons appear black
+            // Template mode only works with monochromatic (black/white) icons
+            // icon.setTemplateImage(true);
+
+            return icon;
           }
         }
       }
+
+      console.error('No PNG icon found in any of the expected locations');
+      console.error('App path:', app.getAppPath());
+      console.error('Resources path:', process.resourcesPath);
+      console.error('Current working directory:', process.cwd());
+      console.error('__dirname:', __dirname);
       throw new Error('No PNG icon found');
     } catch (error) {
       console.error('Failed to load icon from file:', error);
