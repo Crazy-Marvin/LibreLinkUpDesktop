@@ -6,7 +6,7 @@ on:
       - 'flathubbuild-*'
       - 'stage-flathubbuild*'
   pull_request:
-    types: [review_requested]
+    types: [assigned]
 
 jobs:
   generate-sources:

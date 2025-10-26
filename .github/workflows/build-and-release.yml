@@ -5,7 +5,7 @@ on:
       - 'v*'
       - 'stage-v*'
   pull_request:
-    types: [review_requested]
+    types: [assigned]
 
 permissions:
   contents: write
