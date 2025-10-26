@@ -305,51 +305,31 @@ class TrayManager {
 
     this.createTooltipWindow();
 
-    this.state.tray.on('click', (event, bounds) => {
-      // For Linux (Ubuntu), use left click to show/hide tooltip only
-      if (process.platform === 'linux') {
-        if (this.isShowingTooltip) {
-          this.hideTooltip();
+    this.state.tray.on('click', () => {
+      if (this.state.mainWindow) {
+        if (this.state.mainWindow.isVisible()) {
+          this.state.mainWindow.hide();
         } else {
-          this.updateTooltipContent();
-          this.showTooltip();
+          this.state.mainWindow.show();
+          this.state.mainWindow.focus();
         }
-      } else {
-        // Original window show/hide functionality for Windows/macOS
-        if (this.state.mainWindow) {
-          if (this.state.mainWindow.isVisible()) {
-            this.state.mainWindow.hide();
-          } else {
-            this.state.mainWindow.show();
-            this.state.mainWindow.focus();
-          }
-          this.updateTrayContextMenu();
-        }
+        this.updateTrayContextMenu();
       }
+      this.hideTooltip();
     });
 
     // Show custom tooltip on mouse enter
-    if (process.platform !== 'linux') {
-      this.state.tray.on('mouse-enter', () => {
-        if (this.tooltipWindow) {
-          this.updateTooltipContent();
-          this.showTooltip();
-        }
-      });
+    this.state.tray.on('mouse-enter', () => {
+      if (this.tooltipWindow) {
+        this.updateTooltipContent();
+        this.showTooltip();
+      }
+    });
 
-      // Hide custom tooltip on mouse leave (only for non-Linux platforms)
-      this.state.tray.on('mouse-leave', () => {
-        this.hideTooltip();
-      });
-    }
-
-    // For Linux, add right-click context menu support
-    if (process.platform === 'linux') {
-      this.state.tray.on('right-click', () => {
-        this.updateTrayContextMenu();
-        this.state.tray?.popUpContextMenu();
-      });
-    }
+    // Hide custom tooltip on mouse leave
+    this.state.tray.on('mouse-leave', () => {
+      this.hideTooltip();
+    });
 
     this.state.tray.on('destroyed', () => {
       this.state.tray = null;
@@ -470,71 +450,23 @@ class TrayManager {
   </html>`;
   }
 
-private showTooltip(): void {
-  if (!this.state.tray || !this.tooltipWindow) return;
+  private showTooltip(): void {
+    if (!this.state.tray || !this.tooltipWindow) return;
 
-  try {
-    const { screen } = require('electron');
-    const windowBounds = this.tooltipWindow.getBounds();
-
-    let x: number, y: number;
-
-    if (process.platform === 'linux') {
-      // Use the stored click position for Ubuntu
-      let cursorPoint: { x: number; y: number };
-
-      if (this.lastClickPosition) {
-        // Use the position where the tray was clicked
-        cursorPoint = this.lastClickPosition;
-      } else {
-        // Fallback to current cursor position
-        cursorPoint = screen.getCursorScreenPoint();
-      }
-
-      const currentScreen = screen.getDisplayNearestPoint(cursorPoint);
-      const { workArea } = currentScreen;
-
-      // Position tooltip near the click position
-      x = cursorPoint.x - (windowBounds.width / 2);
-      y = cursorPoint.y - windowBounds.height - 20;
-
-      // If positioning above would put it off-screen, position below
-      if (y < workArea.y) {
-        y = cursorPoint.y + 20;
-      }
-
-      // Ensure tooltip stays within screen bounds
-      x = Math.max(workArea.x + 10, Math.min(x, workArea.x + workArea.width - windowBounds.width - 10));
-      y = Math.max(workArea.y + 10, Math.min(y, workArea.y + workArea.height - windowBounds.height - 10));
-    } else {
-      // Original positioning for Windows/macOS
+    try {
       const trayBounds = this.state.tray.getBounds();
-      x = Math.round(trayBounds.x + (trayBounds.width - windowBounds.width) / 2);
-      y = Math.round(trayBounds.y - windowBounds.height - 5);
-    }
-
-    this.tooltipWindow.setPosition(Math.round(x), Math.round(y));
-    this.tooltipWindow.show();
-    this.isShowingTooltip = true;
-  } catch (error) {
-    console.error('Error showing tooltip:', error);
-
-    // Fallback: center the tooltip on primary screen
-    if (this.tooltipWindow) {
-      const { screen } = require('electron');
-      const primaryDisplay = screen.getPrimaryDisplay();
-      const { width, height } = primaryDisplay.workArea;
       const windowBounds = this.tooltipWindow.getBounds();
 
-      const x = Math.round((width - windowBounds.width) / 2);
-      const y = Math.round((height - windowBounds.height) / 2);
+      const x = Math.round(trayBounds.x + (trayBounds.width - windowBounds.width) / 2);
+      const y = Math.round(trayBounds.y - windowBounds.height - 5);
 
       this.tooltipWindow.setPosition(x, y);
       this.tooltipWindow.show();
       this.isShowingTooltip = true;
+    } catch (error) {
+      console.error('Error showing tooltip:', error);
     }
   }
-}
 
   private hideTooltip(): void {
     if (this.tooltipWindow) {
