@@ -1,8 +1,12 @@
-name: Generate and Update Flatpak Sources
+name: Generate and Update Flatpak Sources On Main Repo
 
-# on:
-#   push:
-#   workflow_dispatch:
+on:
+  push:
+    tags:
+      - 'flathubbuild-*'
+      - 'stage-flathubbuild*'
+  pull_request:
+    types: [review_requested]
 
 jobs:
   generate-sources:
