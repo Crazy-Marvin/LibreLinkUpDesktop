@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { useAuthStore } from '../stores/auth'
 import CryptoJS from 'crypto-js';
+import { getCGMData } from '@/lib/linkup';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -44,6 +45,7 @@ export async function clearRedirectTo () {
 }
 
 export function sendLogout() {
+  setTrayVisibility(false);
   window.electron.ipcRenderer.sendMessage('logout')
 }
 
@@ -94,3 +96,49 @@ export function getUserUnit(): string {
 export function hash256(input: string): string {
   return CryptoJS.SHA256(input).toString(CryptoJS.enc.Hex);
 }
+
+export async function getGlucoseValueForTray(token: string, country: string, accountId: string): Promise<number> {
+  try {
+    const data = await getCGMData({
+      token,
+      country,
+      accountId,
+    });
+
+     if (data?.glucoseMeasurement?.ValueInMgPerDl) {
+       const value = getUserValue(data.glucoseMeasurement.ValueInMgPerDl);
+       return Math.round(value);
+     }
+
+    return 0;
+  } catch (error) {
+    console.error('Error getting glucose data for tray:', error);
+    return 0;
+  }
+}
+
+export function updateTrayNumber(number: number, targetLow?: number, targetHigh?: number) {
+  const trayVisible = localStorage.getItem('trayVisible') !== '0';
+  if (!trayVisible) return;
+
+  const { resultUnit } = useAuthStore.getState();
+  if (window.electron?.ipcRenderer) {
+    window.electron.ipcRenderer.sendMessage('update-tray-number', number, resultUnit, targetLow, targetHigh);
+  }
+}
+
+
+export const getTrayVisibility = (): boolean => {
+  const trayVisible = localStorage.getItem('trayVisible');
+  return trayVisible !== '0';
+};
+
+export const setTrayVisibility = async (visible: boolean) => {
+  localStorage.setItem('trayVisible', visible ? '1' : '0');
+
+  if (visible) {
+    await window.electron.ipcRenderer.sendMessage('create-tray');
+  } else {
+    await window.electron.ipcRenderer.sendMessage('destroy-tray');
+  }
+};

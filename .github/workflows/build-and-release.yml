@@ -3,8 +3,13 @@ on:
   push:
     tags:
       - 'v*'
-    pull_request:
-      types: [review_requested]
+      - 'stage-v*'
+  pull_request:
+    types: [assigned]
+
+permissions:
+  contents: write
+
 jobs:
   build_on_windows:
     runs-on: windows-latest
@@ -34,23 +39,22 @@ jobs:
       - name: List release folder
         run: dir release/build/
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        id: create_release
+      - name: Upload Windows Artifacts for PR
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
-          draft: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: windows-artifacts
+          path: release/build/
 
-      - name: Upload Release Artifacts
+      - name: Upload to Release (Windows)
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/build/*.exe
             release/build/*.msi
             release/build/*.appx
+            release/build/*-setup.exe
+          tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -64,7 +68,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ubuntu-node-${{ hashFiles('/package-lock.json') }}
+          key: ubuntu-node-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ubuntu-node-
 
@@ -82,13 +86,25 @@ jobs:
       - name: List release folder
         run: ls -la release/build/
 
-      - name: Upload Ubuntu Release Artifacts
-        uses: softprops/action-gh-release@v2
+      - name: Upload Ubuntu Artifacts for PR
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: ubuntu-artifacts
+          path: |
             release/build/*.deb
             release/build/*.snap
             release/build/*.AppImage
+
+      - name: Upload to Release (Ubuntu)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/build/LibreLinkUpDesktop-*-amd64.deb
+            release/build/LibreLinkUpDesktop-*-amd64.snap
+            release/build/LibreLinkUpDesktop-*-x86_64.AppImage
+          tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -102,7 +118,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: mac-node-${{ hashFiles('/package-lock.json') }}
+          key: mac-node-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             mac-node-
 
@@ -120,10 +136,21 @@ jobs:
       - name: List release folder
         run: ls -la release/build/
 
-      - name: Upload macOS Release Artifacts
+      - name: Upload macOS Artifacts for PR
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: |
+            release/build/*.dmg
+
+      - name: Upload to Release (macOS)
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/build/*.dmg
+            release/build/LibreLinkUpDesktop-*-arm64.dmg
+            release/build/LibreLinkUpDesktop-*-x64.dmg
+          tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -10,6 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { LoadingScreen } from '@/components/ui/loading';
 import { useClearSession } from '@/hooks/session';
+import { toast } from 'sonner';
 import {
   openNewWindow,
   setRedirectTo,
@@ -17,6 +18,9 @@ import {
   getUserUnit,
   getLocalStorageWindowMode,
   setWindowMode,
+  updateTrayNumber,
+  getTrayVisibility,
+  setTrayVisibility,
 } from '@/lib/utils';
 import { useGlucoseAlerts } from '@/hooks/useGlucoseAlerts';
 
@@ -29,8 +33,23 @@ export default function DashboardPage() {
   const token = useAuthStore((state) => state.token);
   const country = useAuthStore((state) => state.country);
   const accountId = useAuthStore((state) => state.accountId);
-  const [graphData, setGraphData] = useState({});
+  const [graphData, setGraphData] = useState<any>({});
   const [isReady, setIsReady] = useState(false);
+  const [trayVisible, setTrayVisible] = useState<boolean>(true);
+
+  const updateTrayManually = () => {
+    if (graphData?.glucoseMeasurement?.ValueInMgPerDl !== undefined &&
+        graphData?.glucoseMeasurement?.ValueInMgPerDl !== null) {
+
+      const glucoseValue = getUserValue(graphData.glucoseMeasurement.ValueInMgPerDl);
+      const targetLow = graphData?.targetLow ?? 70;
+      const targetHigh = graphData?.targetHigh ?? 180;
+
+      updateTrayNumber(glucoseValue, targetLow, targetHigh);
+    } else {
+      console.log('No glucose data available for tray update');
+    }
+  }
 
   const populateGraphData = async () => {
     try {
@@ -41,7 +60,25 @@ export default function DashboardPage() {
       });
 
       if (data === null) {
-        clearSession();
+        setTimeout(() => {
+          toast.error('Unable to fetch glucose data. Please try again.');
+        }, 100);
+        setGraphData({}); // Set empty data to show dashboard with NaN
+        setIsReady(true);
+        return;
+      }
+
+      if (data && typeof data === 'object' && 'error' in data) {
+        // Add a small delay to ensure toast is displayed after i18n changes
+        setTimeout(() => {
+          if (data.error === 'NO_CONNECTIONS') {
+            toast.error(data.message || 'No LibreLinkUp connections found. Please set up a connection in your Libre app.');
+          } else {
+            toast.error('Unable to fetch glucose data. Please try again.');
+          }
+        }, 100);
+        setGraphData({}); // Set empty data to show dashboard with NaN
+        setIsReady(true);
         return;
       }
 
@@ -49,6 +86,11 @@ export default function DashboardPage() {
       setIsReady(true);
     } catch (error) {
       console.log('Unable to getCGMData: ', error);
+      setTimeout(() => {
+        toast.error('Failed to load glucose data. Please check your connection.');
+      }, 100);
+      setGraphData({}); // Set empty data to show dashboard with NaN
+      setIsReady(true);
     }
   };
 
@@ -85,6 +127,26 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    updateTrayManually();
+  }, [graphData]);
+
+  useEffect(() => {
+    const initializeTray = () => {
+      const visibility = getTrayVisibility();
+
+      if (visibility) {
+        setTrayVisibility(true);
+      } else {
+        setTrayVisibility(false);
+      }
+
+      updateTrayManually();
+    };
+
+    initializeTray();
+  }, []);
+
   const openSettings = (path: string) => {
     setRedirectTo(path);
     openNewWindow(path, 1024, 768);
@@ -117,7 +179,8 @@ export default function DashboardPage() {
   const { dispatchAlert } = useGlucoseAlerts();
 
   useEffect(() => {
-    if (graphData?.glucoseMeasurement?.ValueInMgPerDl) {
+    if (graphData?.glucoseMeasurement?.ValueInMgPerDl !== undefined &&
+        graphData?.glucoseMeasurement?.ValueInMgPerDl !== null) {
       dispatchAlert(graphData.glucoseMeasurement.ValueInMgPerDl,graphData?.targetLow,graphData?.targetHigh);
     }
   }, [graphData])
@@ -151,8 +214,6 @@ export default function DashboardPage() {
           className="absolute 2xs:top-2 2xs:right-2 md:top-5 md:right-5 right-0 top-0 outline-none hover:bg-white/20 p-2 rounded-md transition-all no-draggable"
         >
           <div className=''>
-          {/* <EnterFullScreenIcon className="text-white 2xs:h-6 2xs:w-6 w-4 h-4 outline-1" /> */}
-          {/* Use a custom svg icon to just to add a shadow to the icon */}
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white 2xs:h-6 2xs:w-6 w-4 h-4">
             <defs>
               <filter id="pathShadow" x="-50%" y="-50%" width="200%" height="200%">

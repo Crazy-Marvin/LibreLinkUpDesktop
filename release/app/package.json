@@ -1,6 +1,6 @@
 {
   "name": "librelinkupdesktop",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "This is a desktop application that fetches your blood sugar from LibreLinkUp",
   "license": "Apache-2.0",
   "author": "Crazy Marvin & Contributors (especially Yuran) <marvin@poopjournal.rocks> (https://crazymarvin.com/librelinkupdesktop/)",

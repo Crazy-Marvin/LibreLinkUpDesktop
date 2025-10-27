@@ -1,5 +1,6 @@
 import { ThemeType, useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
+import { ToggleSwitch } from "@/components/ui/toggle-switch"
 import SettingsLayout from "@/layouts/settings-layout"
 import { cn } from "@/lib/utils"
 import { useNavigate } from "react-router-dom"
@@ -13,8 +14,8 @@ import {
 import { useAuthStore } from "@/stores/auth"
 import { countries, languages, themes, resultUnits, windowModes } from "@/config/app"
 import { useTranslation } from "react-i18next"
-import { setRedirectTo, sendRefreshPrimaryWindow, setWindowMode, getLocalStorageWindowMode } from "@/lib/utils"
-import { useEffect, useState } from 'react';
+import { setRedirectTo, sendRefreshPrimaryWindow, setWindowMode, getLocalStorageWindowMode, getTrayVisibility, setTrayVisibility} from "@/lib/utils"
+import { useEffect, useState, useCallback  } from 'react';
 
 export default function SettingsGeneralPage() {
   const navigate = useNavigate()
@@ -57,13 +58,31 @@ export default function SettingsGeneralPage() {
     fetchWindowMode();
   }, []);
 
+  const [trayVisible, setTrayVisible] = useState<boolean>(true);
+
+  useEffect(() => {
+    const initializeTrayVisibility = () => {
+      const visibility = getTrayVisibility();
+      setTrayVisible(visibility);
+    };
+
+    initializeTrayVisibility();
+  }, []);
+
+  const handleToggleTray = useCallback(async (checked: boolean) => {
+    setTrayVisible(checked);
+    await setTrayVisibility(checked);
+  }, []);
+
+  const toggleSwitchKey = `tray-toggle-${trayVisible}`;
+
   return (
     <SettingsLayout>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div>
-          <p className="text-foreground/30 text-xs mb-2">{t('Theme')}</p>
+      <div className="space-y-6">
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Theme')}</p>
           <Select onValueChange={setAndRefreshTheme} defaultValue={theme ?? ''}>
-            <SelectTrigger>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t("SelectTheme")} />
             </SelectTrigger>
             <SelectContent>
@@ -75,10 +94,11 @@ export default function SettingsGeneralPage() {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <p className="text-foreground/30 text-xs mb-2">{t('Country')}</p>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Country')}</p>
           <Select onValueChange={setCountry} defaultValue={country ?? ''}>
-            <SelectTrigger>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t("SelectCountry")} />
             </SelectTrigger>
             <SelectContent>
@@ -90,10 +110,11 @@ export default function SettingsGeneralPage() {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <p className="text-foreground/30 text-xs mb-2">{t('Language')}</p>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Language')}</p>
           <Select onValueChange={setAndRefreshLanguage} defaultValue={language ?? ''}>
-            <SelectTrigger>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t("SelectLanguage")} />
             </SelectTrigger>
             <SelectContent>
@@ -105,10 +126,11 @@ export default function SettingsGeneralPage() {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <p className="text-foreground/30 text-xs mb-2">{t('WindowMode')}</p>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('WindowMode')}</p>
           <Select key={currentWindowMode} onValueChange={handleSetWindowMode} defaultValue={currentWindowMode ?? 'windowed'}>
-            <SelectTrigger>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={("SelectMode")} />
             </SelectTrigger>
             <SelectContent>
@@ -120,10 +142,11 @@ export default function SettingsGeneralPage() {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <p className="text-foreground/30 text-xs mb-2">{t('Unit')}</p>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Unit')}</p>
           <Select onValueChange={handleSetResultUnit} defaultValue={resultUnit ?? 'mg/dL'}>
-            <SelectTrigger>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={("SelectUnit")} />
             </SelectTrigger>
             <SelectContent>
@@ -134,6 +157,15 @@ export default function SettingsGeneralPage() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Show glucose values in tray')}</p>
+          <ToggleSwitch
+            key={toggleSwitchKey}
+            checked={trayVisible}
+            onChange={handleToggleTray}
+          />
         </div>
       </div>
     </SettingsLayout>

@@ -24,7 +24,7 @@ type GetGeneralRequest = {
 
 export async function getAuthToken(request: LoginAttemptRequest): Promise<{
   token: string, accountId: string, accountCountry: string,
-} | null> {
+} | { error: number } | null> {
   try {
     let baseUrl = getBaseUrl(request.country);
 
@@ -38,16 +38,33 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
       },
       headers: {
         product: 'llu.android',
-        version: '4.12.0',
+        version: '4.16.0',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache',
-        'Accept-Encoding': 'gzip',
-        Connection: 'keep-alive',
+        // 'Accept-Encoding': 'gzip',
+        // Connection: 'keep-alive',
       },
     });
 
-    if (response.data?.status === 0 && response.data?.data?.redirect) {
-      baseUrl = getBaseUrl(response.data.data.region);
+    if (response.data?.status === 0 ) {
+      // Handle different response structures
+      let countryCode;
+      if (response.data.data.user?.country) {
+        // Original structure: {data: {user: {country: "fr"}}}
+        countryCode = response.data.data.user.country;
+        // if countryCode is ch, set it to eu
+        if (countryCode.toLowerCase() === 'ch') {
+          countryCode = 'eu';
+        }
+      } else if (response.data.data.region) {
+        // New structure: {data: {region: "fr"}}
+        countryCode = response.data.data.region;
+      } else {
+        // Fallback to original request country
+        countryCode = request.country;
+      }
+
+      baseUrl = getBaseUrl(countryCode);
 
       response = await axios({
         method: 'post',
@@ -59,33 +76,42 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
         },
         headers: {
           product: 'llu.android',
-          version: '4.12.0',
+          version: '4.16.0',
           Pragma: 'no-cache',
           'Cache-Control': 'no-cache',
-          'Accept-Encoding': 'gzip',
-          Connection: 'keep-alive',
+        // 'Accept-Encoding': 'gzip',
+        // Connection: 'keep-alive',
         },
       });
     }
+    else{
+      return {
+        error: response.data?.status || 999999
+      };
+    }
+
+    let finalCountryCode = response.data?.data?.user?.country?.toLowerCase();
+    finalCountryCode = finalCountryCode === 'ch' ? 'eu' : finalCountryCode;
 
     return {
       token: response.data?.data?.authTicket?.token,
       accountId: response.data?.data?.user?.id,
-      accountCountry: response.data?.data?.user?.country?.toLowerCase(),
+      accountCountry: finalCountryCode,
     };
   } catch (error) {
     console.log("Unable to get the token: ", error);
+    throw error;
   }
 
   return null;
 }
 
-export async function getCGMData(request: GetGeneralRequest): Promise<string|null> {
+export async function getCGMData(request: GetGeneralRequest): Promise<string|null|{error: string, message: string}> {
   try {
     const baseURL = getBaseUrl(request.country)
     const headers = {
       product: 'llu.android',
-      version: '4.12.0',
+      version: '4.16.0',
       Pragma: 'no-cache',
       'Cache-Control': 'no-cache',
       Authorization: `Bearer ${request.token}`,
@@ -102,7 +128,9 @@ export async function getCGMData(request: GetGeneralRequest): Promise<string|nul
     const patientId = connResponse.data?.data[0]?.patientId
 
     if (!patientId) {
-      console.log("Unable to get the patient id")
+      if (connResponse.data?.data?.length === 0) {
+        return { error: 'NO_CONNECTIONS', message: 'No LibreLinkUp connections found. Please set up a connection in your Libre app.' }
+      }
       return null
     }
 
@@ -113,10 +141,8 @@ export async function getCGMData(request: GetGeneralRequest): Promise<string|nul
       url: `/connections/${patientId}/graph`,
     })
 
-    console.log(graphResponse?.data?.data)
-
     return graphResponse?.data?.data?.connection
-  } catch (error) {
+  } catch (error: any) {
     console.log('Unable to getCGMData: ', error)
   }
 
@@ -128,7 +154,7 @@ export async function getConnection(request: GetGeneralRequest): Promise<string|
     const baseURL = getBaseUrl(request.country)
     const headers = {
       product: 'llu.android',
-      version: '4.12.0',
+      version: '4.16.0',
       Pragma: 'no-cache',
       'Cache-Control': 'no-cache',
       Authorization: `Bearer ${request.token}`,
@@ -143,7 +169,7 @@ export async function getConnection(request: GetGeneralRequest): Promise<string|
     })
 
     return response?.data?.data[0]
-  } catch (error) {
+  } catch (error: any) {
     console.log('Unable to getConnection: ', error)
   }
 

@@ -1,0 +1,112 @@
+name: Generate and Update Flatpak Sources On Main Repo
+
+on:
+  push:
+    tags:
+      - 'flathubbuild-*'
+      - 'stage-flathubbuild*'
+  pull_request:
+    types: [assigned]
+
+jobs:
+  generate-sources:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Install system dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y flatpak flatpak-builder nodejs npm python3 python3-pip python3-venv
+
+    - name: Setup Flatpak
+      run: |
+        sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+        sudo flatpak install -y flathub org.freedesktop.Platform//23.08
+        sudo flatpak install -y flathub org.freedesktop.Sdk//23.08
+        sudo flatpak install -y flathub org.flatpak.Builder
+        sudo flatpak install -y flathub org.electronjs.Electron2.BaseApp//23.08
+        sudo flatpak install -y flathub org.freedesktop.Sdk.Extension.node20//23.08
+
+    - name: Install dependencies and verify package-lock.json
+      run: |
+        echo "=== Current directory contents ==="
+        ls -la
+
+        # Install dependencies to generate/update package-lock.json if needed
+        npm install --legacy-peer-deps --no-audit --no-fund
+
+        echo "=== Package-lock.json exists ==="
+        [ -f package-lock.json ] && echo "package-lock.json found" || echo "package-lock.json not found"
+
+        echo "=== Package-lock.json details ==="
+        ls -la package-lock.json
+
+    - name: Install flatpak-node-generator
+      run: |
+        python3 -m pip install --user pipx
+        python3 -m pipx ensurepath
+        export PATH="$HOME/.local/bin:$PATH"
+
+        # Clone and install flatpak-builder-tools
+        git clone https://github.com/flatpak/flatpak-builder-tools.git
+        cd flatpak-builder-tools/node
+        pipx install .
+
+        echo "=== flatpak-node-generator installed ==="
+        which flatpak-node-generator
+
+    - name: Generate sources.json
+      run: |
+        echo "=== Current directory contents before generation ==="
+        ls -la
+
+        echo "=== Generating sources from package-lock.json ==="
+        export PATH="$HOME/.local/bin:$PATH"
+        flatpak-node-generator npm package-lock.json
+
+        echo "=== Generated files ==="
+        ls -la generated-sources.json || echo "No generated-sources.json created"
+
+        # Verify the generated file exists
+        [ -f generated-sources.json ] && echo "generated-sources.json successfully created" || exit 1
+
+    - name: Verify generated-sources.json
+      run: |
+        echo "=== Verifying generated-sources.json ==="
+        [ -f generated-sources.json ] && echo "generated-sources.json exists" || exit 1
+
+        echo "=== File size ==="
+        ls -la generated-sources.json
+
+        echo "=== First few lines ==="
+        head -20 generated-sources.json
+
+    - name: Commit and push generated-sources.json
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add generated-sources.json
+
+        # Check if there are changes to commit
+        if ! git diff --staged --quiet; then
+          git commit -m "Update generated-sources.json for Flatpak build [skip ci]"
+          git push
+          echo "Successfully pushed updated generated-sources.json to repository"
+        else
+          echo "No changes to generated-sources.json - skipping commit"
+        fi
+
+    - name: Upload generated-sources.json as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: generated-sources-json
+        path: generated-sources.json
+        retention-days: 7

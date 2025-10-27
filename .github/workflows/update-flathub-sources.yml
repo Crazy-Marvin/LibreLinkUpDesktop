@@ -1,0 +1,313 @@
+name: Flatpak Build and Sync
+
+on:
+  push:
+    tags:
+      - 'flathubbuild-*'
+  workflow_dispatch:
+
+jobs:
+  generate-sources:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      has_changes: ${{ steps.commit-check.outputs.has_changes }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Install system dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y flatpak flatpak-builder nodejs npm python3 python3-pip python3-venv jq
+
+    - name: Setup Flatpak
+      run: |
+        sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+        sudo flatpak install -y flathub org.freedesktop.Platform//23.08
+        sudo flatpak install -y flathub org.freedesktop.Sdk//23.08
+        sudo flatpak install -y flathub org.flatpak.Builder
+        sudo flatpak install -y flathub org.electronjs.Electron2.BaseApp//23.08
+        sudo flatpak install -y flathub org.freedesktop.Sdk.Extension.node20//23.08
+
+    - name: Install dependencies and verify package-lock.json
+      run: |
+        echo "=== Current directory contents ==="
+        ls -la
+
+        # Install dependencies to generate/update package-lock.json if needed
+        npm install --legacy-peer-deps --no-audit --no-fund
+
+        echo "=== Package-lock.json exists ==="
+        [ -f package-lock.json ] && echo "package-lock.json found" || echo "package-lock.json not found"
+
+        echo "=== Package-lock.json details ==="
+        ls -la package-lock.json
+
+    - name: Install flatpak-node-generator
+      run: |
+        python3 -m pip install --user pipx
+        python3 -m pipx ensurepath
+        export PATH="$HOME/.local/bin:$PATH"
+
+        # Clone and install flatpak-builder-tools
+        git clone https://github.com/flatpak/flatpak-builder-tools.git
+        cd flatpak-builder-tools/node
+        pipx install .
+
+        echo "=== flatpak-node-generator installed ==="
+        which flatpak-node-generator
+
+    - name: Generate sources.json
+      run: |
+        echo "=== Current directory contents before generation ==="
+        ls -la
+
+        echo "=== Generating sources from package-lock.json ==="
+        export PATH="$HOME/.local/bin:$PATH"
+        flatpak-node-generator npm package-lock.json
+
+        # Ensure the file always has changes by adding a metadata entry
+        if [ -f generated-sources.json ]; then
+          # Use jq to add a workflow metadata entry
+          jq '. + [{ "type": "metadata", "generated_at": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'", "workflow_run": "'$GITHUB_RUN_ID'", "purpose": "flatpak_build" }]' generated-sources.json > generated-sources.json.tmp
+          mv generated-sources.json.tmp generated-sources.json
+          echo "✅ Added metadata to ensure unique content"
+        fi
+
+        echo "=== Generated files ==="
+        ls -la generated-sources.json || echo "No generated-sources.json created"
+
+        # Verify the generated file exists
+        [ -f generated-sources.json ] && echo "generated-sources.json successfully created" || exit 1
+
+    - name: Verify generated-sources.json
+      run: |
+        echo "=== Verifying generated-sources.json ==="
+        [ -f generated-sources.json ] && echo "generated-sources.json exists" || exit 1
+
+        echo "=== File size ==="
+        ls -la generated-sources.json
+
+        echo "=== First few lines ==="
+        head -20 generated-sources.json
+
+    - name: Debug file comparison
+      run: |
+        echo "=== Detailed file comparison ==="
+
+        # Check if file is tracked
+        if git ls-files --error-unmatch generated-sources.json >/dev/null 2>&1; then
+          echo "File is tracked in git"
+
+          # Create temporary files for comparison
+          git show HEAD:generated-sources.json > old.json 2>/dev/null || echo "No previous version in HEAD"
+
+          if [ -f old.json ]; then
+            cp generated-sources.json new.json
+
+            echo "=== File sizes ==="
+            echo "Old: $(wc -c < old.json) bytes"
+            echo "New: $(wc -c < new.json) bytes"
+
+            echo "=== SHA256 hashes ==="
+            echo "Old: $(sha256sum old.json)"
+            echo "New: $(sha256sum new.json)"
+
+            # Check if files are identical
+            if cmp -s old.json new.json; then
+              echo "✅ Files are IDENTICAL - no changes to commit"
+            else
+              echo "❌ Files are DIFFERENT - should commit changes"
+            fi
+
+            # Cleanup
+            rm -f old.json new.json
+          else
+            echo "No previous version found - this should be the first commit"
+          fi
+        else
+          echo "File is NOT tracked in git - this should be the first commit"
+        fi
+
+    - name: Commit and push generated-sources.json
+      id: commit-check
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add generated-sources.json
+
+        # Check if there are changes to commit
+        if ! git diff --staged --quiet; then
+          git commit -m "Update generated-sources.json for Flatpak build [skip ci]"
+          git push
+          echo "Successfully pushed updated generated-sources.json to repository"
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+        else
+          echo "No changes to generated-sources.json - skipping commit"
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Upload generated-sources.json as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: generated-sources-json
+        path: generated-sources.json
+        retention-days: 7
+
+  sync-file:
+    runs-on: ubuntu-latest
+    needs: generate-sources
+    if: needs.generate-sources.outputs.has_changes == 'true'
+
+    steps:
+    - name: Checkout main repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Download generated-sources.json artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: generated-sources-json
+        path: ./
+
+    - name: Checkout target repo
+      uses: actions/checkout@v4
+      with:
+        repository: lkavindu199/test_libre
+        token: ${{ secrets.TARGET_REPO_TOKEN }}
+        path: target-repo
+        ref: main
+
+    - name: Copy file to target repo
+      run: |
+        # Create file if it doesn't exist in target
+        if [ -f "generated-sources.json" ]; then
+          cp generated-sources.json target-repo/
+          echo "File copied successfully"
+        else
+          echo "Error: generated-sources.json not found in source repo"
+          exit 1
+        fi
+
+    - name: Commit and push to target repo
+      run: |
+        cd target-repo
+        git config user.name "GitHub Actions Bot"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        git add generated-sources.json
+
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Auto-sync: Update generated-sources.json from LibreLinkUpDesktop_new1"
+          git push
+          echo "Changes pushed successfully"
+        fi
+
+  update-flatpak-manifest:
+    runs-on: ubuntu-latest
+    needs: sync-file
+    if: needs.generate-sources.outputs.has_changes == 'true'
+
+    steps:
+    - name: Checkout main repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Checkout target repo
+      uses: actions/checkout@v4
+      with:
+        repository: lkavindu199/test_libre
+        token: ${{ secrets.TARGET_REPO_TOKEN }}
+        path: target-repo
+
+    - name: Get latest commit
+      id: commit-info
+      run: |
+        echo "latest_commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Update manifest with Python
+      run: |
+        cd target-repo
+
+        LATEST_COMMIT="${{ steps.commit-info.outputs.latest_commit }}"
+
+        python3 -c "
+        import re
+
+        latest_commit = '$LATEST_COMMIT'
+
+        print(f'Updating with commit: {latest_commit}')
+
+        # Read file
+        with open('rocks.poopjournal.librelinkupdesktop.yml', 'r') as f:
+            content = f.read()
+
+        # Find ALL git URLs in the file
+        git_urls = re.findall(r'url: (https://github\.com/[^\s]+\.git)', content)
+        print(f'Found {len(git_urls)} git URLs in total:')
+        for url in git_urls:
+            print(f'  - {url}')
+
+        # Replace ANY git URL with our new URL
+        content = re.sub(
+            r'url: https://github\.com/[^/\s]+/[^\s]+\.git',
+            'url: https://github.com/lkavindu199/LibreLinkUpDesktop_new1.git',
+            content
+        )
+        print('✅ Replaced ALL git URLs with our repository')
+
+        # Replace branch (any branch name) after ANY git URL
+        content = re.sub(
+            r'(url: https://github\.com/lkavindu199/LibreLinkUpDesktop_new1\.git\s+)branch: \S+',
+            r'\\1branch: main',
+            content
+        )
+        print('✅ Updated branch to main for all occurrences')
+
+        # Replace commit (any commit hash) after ANY branch line
+        content = re.sub(
+            r'(branch: [^\s]+\s+)commit: [a-f0-9]+',
+            f'\\1commit: {latest_commit}',
+            content
+        )
+        print('✅ Updated commit ID for all occurrences')
+
+        # Write back
+        with open('rocks.poopjournal.librelinkupdesktop.yml', 'w') as f:
+            f.write(content)
+
+        print('✅ File updated successfully')
+        "
+
+    - name: Verify all changes
+      run: |
+        cd target-repo
+        echo "=== All git sources after update ==="
+        grep -A 2 -B 1 "url:" rocks.poopjournal.librelinkupdesktop.yml
+
+    - name: Commit and push
+      run: |
+        cd target-repo
+        git config user.name "GitHub Actions Bot"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        git add rocks.poopjournal.librelinkupdesktop.yml
+
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "chore: Update manifest "
+          git push
+          echo "✅ Manifest updated successfully"
+        fi

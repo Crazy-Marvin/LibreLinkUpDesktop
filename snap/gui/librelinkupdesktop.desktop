@@ -1,5 +1,5 @@
 [Desktop Entry]
-Version=0.1.14
+Version=0.1.15
 Name=LibreLinkUpDesktop
 Comment=This is a desktop application that fetches your blood sugar from LibreLinkUp
 Exec=${SNAP}/librelinkupdesktop/librelinkupdesktop --no-sandbox
