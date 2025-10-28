@@ -7,7 +7,7 @@ on:
   pull_request:
     types: [assigned]
   release:
-    types: [created, edited]
+    types: [edited]
 
 permissions:
   contents: write
