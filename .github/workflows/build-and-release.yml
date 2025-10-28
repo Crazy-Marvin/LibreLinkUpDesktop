@@ -6,6 +6,8 @@ on:
       - 'stage-v*'
   pull_request:
     types: [assigned]
+  release:
+    types: [created, edited]
 
 permissions:
   contents: write
