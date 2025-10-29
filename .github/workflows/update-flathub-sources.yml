@@ -247,17 +247,18 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Get latest commit
+      id: commit-info
+      run: |
+        echo "latest_commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        echo "Current commit: $(git rev-parse HEAD)"
+
     - name: Checkout target repo
       uses: actions/checkout@v4
       with:
         repository: ${{ env.TARGET_REPO }}
         token: ${{ secrets.TARGET_REPO_TOKEN }}
         path: target-repo
-
-    - name: Get latest commit
-      id: commit-info
-      run: |
-        echo "latest_commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
     - name: Update manifest with dynamic repository
       run: |
@@ -271,55 +272,58 @@ jobs:
         echo "Latest commit: $LATEST_COMMIT"
         echo "Repository URL: $REPO_URL"
 
-        # Use a Python script with proper variable substitution
-        python3 -c "
-        latest_commit = '$LATEST_COMMIT'
-        repo_url = '$REPO_URL'
+        # Create a Python script to handle the update more reliably
+        cat > update_manifest.py << 'EOF'
+        import re
+        import sys
 
-        print(f'Updating manifest with commit: {latest_commit}')
+        latest_commit = sys.argv[1]
+        repo_url = sys.argv[2]
+        filename = 'rocks.poopjournal.librelinkupdesktop.yml'
+
+        print(f'Updating {filename} with commit: {latest_commit}')
         print(f'Using repository: {repo_url}')
 
-        with open('rocks.poopjournal.librelinkupdesktop.yml', 'r') as f:
-            lines = f.readlines()
+        with open(filename, 'r') as f:
+            content = f.read()
 
-        new_lines = []
-        i = 0
-        while i < len(lines):
-            line = lines[i]
+        # Use regex to find and replace the git source block
+        # Look for the specific librelinkupdesktop module
+        pattern = r'(name: librelinkupdesktop[^\}]*sources:\s*-\s*type: git\s*url:\s*)([^\s]+)(\s*tag:\s*[^\s]+\s*commit:\s*)([^\s]+)'
 
-            # Look for the git source section
-            if 'type: git' in line:
-                # Keep the type line
-                new_lines.append(line)
-                i += 1
+        replacement = rf'\1{repo_url}\3{latest_commit}'
 
-                # Process the entire git block until we find all relevant fields
-                while i < len(lines) and lines[i].startswith(' '):
-                    current_line = lines[i]
+        updated_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
 
-                    if current_line.strip().startswith('url:'):
-                        # Update URL
-                        indent = current_line.split('url:')[0]
-                        new_lines.append(f'{indent}url: {repo_url}\n')
-                    elif current_line.strip().startswith('commit:'):
-                        # Update commit
-                        indent = current_line.split('commit:')[0]
-                        new_lines.append(f'{indent}commit: {latest_commit}\n')
-                    else:
-                        # Keep other lines (like tag, etc.) as-is
-                        new_lines.append(current_line)
+        if updated_content == content:
+            print("❌ No changes made - pattern not found!")
+            # Try alternative pattern
+            pattern2 = r'(- type: git\s*url:\s*)([^\s]+)(\s*.*?commit:\s*)([^\s]+)'
+            updated_content = re.sub(pattern2, rf'\1{repo_url}\3{latest_commit}', content, flags=re.DOTALL)
 
-                    i += 1
-                continue
+            if updated_content == content:
+                print("❌ Alternative pattern also failed!")
+            else:
+                print("✅ Updated using alternative pattern")
+        else:
+            print("✅ Updated using primary pattern")
 
-            new_lines.append(line)
-            i += 1
+        with open(filename, 'w') as f:
+            f.write(updated_content)
 
-        with open('rocks.poopjournal.librelinkupdesktop.yml', 'w') as f:
-            f.writelines(new_lines)
+        print('✅ Manifest update completed')
+        EOF
 
-        print('✅ Manifest updated successfully')
-        "
+        python3 update_manifest.py "$LATEST_COMMIT" "$REPO_URL"
+
+    - name: Debug - Show git source section
+      run: |
+        cd target-repo
+        echo "=== Current git source section ==="
+        # Extract and display the librelinkupdesktop module section
+        sed -n '/name: librelinkupdesktop/,/sources:/p' rocks.poopjournal.librelinkupdesktop.yml
+        echo "=== Git sources details ==="
+        grep -A 10 "name: librelinkupdesktop" rocks.poopjournal.librelinkupdesktop.yml | grep -A 10 "sources:"
 
     - name: Verify the update worked
       run: |
@@ -332,19 +336,24 @@ jobs:
         echo "Looking for URL: $CURRENT_REPO_URL"
         echo "Expected commit: $EXPECTED_COMMIT"
 
-        # Show the git section
-        grep -A 2 -B 1 "type: git" rocks.poopjournal.librelinkupdesktop.yml
+        # Extract the actual values from the file
+        echo "=== Current values in file ==="
+        grep -A 15 "name: librelinkupdesktop" rocks.poopjournal.librelinkupdesktop.yml | grep -E "(url:|commit:)" | head -2
 
-        # Extract the actual commit from the file
-        CURRENT_COMMIT=$(grep -A 2 "type: git" rocks.poopjournal.librelinkupdesktop.yml | grep "commit:" | awk '{print $2}')
+        CURRENT_URL=$(grep -A 15 "name: librelinkupdesktop" rocks.poopjournal.librelinkupdesktop.yml | grep "url:" | head -1 | awk '{print $2}')
+        CURRENT_COMMIT=$(grep -A 15 "name: librelinkupdesktop" rocks.poopjournal.librelinkupdesktop.yml | grep "commit:" | head -1 | awk '{print $2}')
+
+        echo "=== Current URL in file: $CURRENT_URL ==="
         echo "=== Current commit in file: $CURRENT_COMMIT ==="
 
-        if [ "$CURRENT_COMMIT" = "$EXPECTED_COMMIT" ]; then
-          echo "✅ Commit successfully updated!"
+        if [ "$CURRENT_COMMIT" = "$EXPECTED_COMMIT" ] && [ "$CURRENT_URL" = "$CURRENT_REPO_URL" ]; then
+          echo "✅ Commit and URL successfully updated!"
         else
-          echo "❌ Commit update failed!"
-          echo "Expected: $EXPECTED_COMMIT"
-          echo "Found: $CURRENT_COMMIT"
+          echo "❌ Update failed!"
+          echo "Expected URL: $CURRENT_REPO_URL"
+          echo "Found URL: $CURRENT_URL"
+          echo "Expected commit: $EXPECTED_COMMIT"
+          echo "Found commit: $CURRENT_COMMIT"
           exit 1
         fi
 
