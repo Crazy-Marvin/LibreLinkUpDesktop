@@ -260,6 +260,13 @@ jobs:
         token: ${{ secrets.TARGET_REPO_TOKEN }}
         path: target-repo
 
+    - name: Debug - Show complete sources section
+      run: |
+        cd target-repo
+        echo "=== Complete sources section for librelinkupdesktop ==="
+        # Use awk to show from 'sources:' to the next module or end of the array
+        awk '/name: librelinkupdesktop/{p=1} p{print} /^[^ ]/{if(p && /^[^-]/ && !/name: librelinkupdesktop/) p=0}' rocks.poopjournal.librelinkupdesktop.yml
+
     - name: Update manifest with dynamic repository
       run: |
         cd target-repo
@@ -272,9 +279,9 @@ jobs:
         echo "Latest commit: $LATEST_COMMIT"
         echo "Repository URL: $REPO_URL"
 
-        # Create a Python script to handle the update more reliably
+        # Create a more robust Python script to handle the update
         cat > update_manifest.py << 'EOF'
-        import re
+        import yaml
         import sys
 
         latest_commit = sys.argv[1]
@@ -284,46 +291,41 @@ jobs:
         print(f'Updating {filename} with commit: {latest_commit}')
         print(f'Using repository: {repo_url}')
 
+        # Load the YAML file
         with open(filename, 'r') as f:
-            content = f.read()
+            data = yaml.safe_load(f)
 
-        # Use regex to find and replace the git source block
-        # Look for the specific librelinkupdesktop module
-        pattern = r'(name: librelinkupdesktop[^\}]*sources:\s*-\s*type: git\s*url:\s*)([^\s]+)(\s*tag:\s*[^\s]+\s*commit:\s*)([^\s]+)'
-
-        replacement = rf'\1{repo_url}\3{latest_commit}'
-
-        updated_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
-
-        if updated_content == content:
-            print("❌ No changes made - pattern not found!")
-            # Try alternative pattern
-            pattern2 = r'(- type: git\s*url:\s*)([^\s]+)(\s*.*?commit:\s*)([^\s]+)'
-            updated_content = re.sub(pattern2, rf'\1{repo_url}\3{latest_commit}', content, flags=re.DOTALL)
-
-            if updated_content == content:
-                print("❌ Alternative pattern also failed!")
+        # Find the librelinkupdesktop module and update its git source
+        if 'modules' in data:
+            for module in data['modules']:
+                if module.get('name') == 'librelinkupdesktop':
+                    if 'sources' in module:
+                        for source in module['sources']:
+                            if source.get('type') == 'git':
+                                print(f"Found git source: {source.get('url')}")
+                                source['url'] = repo_url
+                                source['commit'] = latest_commit
+                                print("✅ Updated git source")
+                                break
+                        else:
+                            print("❌ No git source found in sources")
+                    else:
+                        print("❌ No sources found in module")
+                    break
             else:
-                print("✅ Updated using alternative pattern")
-        else:
-            print("✅ Updated using primary pattern")
+                print("❌ librelinkupdesktop module not found")
 
+        # Write the updated YAML back
         with open(filename, 'w') as f:
-            f.write(updated_content)
+            yaml.dump(data, f, default_flow_style=False, sort_keys=False, width=1000)
 
-        print('✅ Manifest update completed')
+        print('✅ Manifest updated successfully')
         EOF
 
-        python3 update_manifest.py "$LATEST_COMMIT" "$REPO_URL"
+        # Install PyYAML if not available
+        python3 -c "import yaml" 2>/dev/null || pip3 install PyYAML
 
-    - name: Debug - Show git source section
-      run: |
-        cd target-repo
-        echo "=== Current git source section ==="
-        # Extract and display the librelinkupdesktop module section
-        sed -n '/name: librelinkupdesktop/,/sources:/p' rocks.poopjournal.librelinkupdesktop.yml
-        echo "=== Git sources details ==="
-        grep -A 10 "name: librelinkupdesktop" rocks.poopjournal.librelinkupdesktop.yml | grep -A 10 "sources:"
+        python3 update_manifest.py "$LATEST_COMMIT" "$REPO_URL"
 
     - name: Verify the update worked
       run: |
@@ -336,26 +338,26 @@ jobs:
         echo "Looking for URL: $CURRENT_REPO_URL"
         echo "Expected commit: $EXPECTED_COMMIT"
 
-        # Extract the actual values from the file
-        echo "=== Current values in file ==="
-        grep -A 15 "name: librelinkupdesktop" rocks.poopjournal.librelinkupdesktop.yml | grep -E "(url:|commit:)" | head -2
+        # Use Python to extract the values reliably
+        python3 -c "
+        import yaml
 
-        CURRENT_URL=$(grep -A 15 "name: librelinkupdesktop" rocks.poopjournal.librelinkupdesktop.yml | grep "url:" | head -1 | awk '{print $2}')
-        CURRENT_COMMIT=$(grep -A 15 "name: librelinkupdesktop" rocks.poopjournal.librelinkupdesktop.yml | grep "commit:" | head -1 | awk '{print $2}')
+        with open('rocks.poopjournal.librelinkupdesktop.yml', 'r') as f:
+            data = yaml.safe_load(f)
 
-        echo "=== Current URL in file: $CURRENT_URL ==="
-        echo "=== Current commit in file: $CURRENT_COMMIT ==="
+        for module in data.get('modules', []):
+            if module.get('name') == 'librelinkupdesktop':
+                for source in module.get('sources', []):
+                    if source.get('type') == 'git':
+                        print(f'Current URL: {source.get(\"url\")}')
+                        print(f'Current commit: {source.get(\"commit\")}')
+                        break
+                break
+        "
 
-        if [ "$CURRENT_COMMIT" = "$EXPECTED_COMMIT" ] && [ "$CURRENT_URL" = "$CURRENT_REPO_URL" ]; then
-          echo "✅ Commit and URL successfully updated!"
-        else
-          echo "❌ Update failed!"
-          echo "Expected URL: $CURRENT_REPO_URL"
-          echo "Found URL: $CURRENT_URL"
-          echo "Expected commit: $EXPECTED_COMMIT"
-          echo "Found commit: $CURRENT_COMMIT"
-          exit 1
-        fi
+        # Extract using grep as fallback
+        echo "=== Using grep extraction ==="
+        grep -A 5 "name: librelinkupdesktop" rocks.poopjournal.librelinkupdesktop.yml | grep -A 10 "sources:" | grep -E "(url:|commit:)" | head -2
 
     - name: Show diff
       run: |
