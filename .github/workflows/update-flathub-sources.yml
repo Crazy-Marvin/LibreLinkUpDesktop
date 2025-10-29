@@ -206,7 +206,7 @@ jobs:
         repository: ${{ env.TARGET_REPO }}
         token: ${{ secrets.TARGET_REPO_TOKEN }}
         path: target-repo
-        ref: main
+        ref: master
         fetch-depth: 1
         persist-credentials: false
 
