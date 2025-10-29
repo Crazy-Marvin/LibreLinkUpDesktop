@@ -207,44 +207,33 @@ jobs:
         token: ${{ secrets.TARGET_REPO_TOKEN }}
         path: target-repo
         ref: master
-        fetch-depth: 1
-        persist-credentials: false
 
     - name: Copy file to target repo
       run: |
-        echo "Current directory: $(pwd)"
-        echo "Artifact contents:"
-        ls -la
-
+        # Create file if it doesn't exist in target
         if [ -f "generated-sources.json" ]; then
           cp generated-sources.json target-repo/
-          echo "✅ File copied successfully to target-repo/"
-          ls -la target-repo/generated-sources.json
+          echo "File copied successfully"
         else
-          echo "❌ Error: generated-sources.json not found"
-          ls -la
+          echo "Error: generated-sources.json not found in source repo"
           exit 1
         fi
 
     - name: Commit and push to target repo
       run: |
         cd target-repo
-
-        # Configure git with the token
         git config user.name "GitHub Actions Bot"
         git config user.email "github-actions[bot]@users.noreply.github.com"
 
-        # Add remote with authentication
-        git remote set-url origin https://x-access-token:${{ secrets.TARGET_REPO_TOKEN }}@github.com/${{ env.TARGET_REPO }}.git
-
         git add generated-sources.json
 
+        # Check if there are changes to commit
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
           git commit -m "Auto-sync: Update generated-sources.json"
-          git push origin main
-          echo "✅ Changes pushed successfully"
+          git push
+          echo "Changes pushed successfully"
         fi
 
   update-flatpak-manifest:
@@ -264,15 +253,11 @@ jobs:
         repository: ${{ env.TARGET_REPO }}
         token: ${{ secrets.TARGET_REPO_TOKEN }}
         path: target-repo
-        ref: main
-        fetch-depth: 1
 
     - name: Get latest commit
       id: commit-info
       run: |
-        cd target-repo
         echo "latest_commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-        echo "branch=$(git branch --show-current)" >> $GITHUB_OUTPUT
 
     - name: Update manifest with dynamic repository
       run: |
