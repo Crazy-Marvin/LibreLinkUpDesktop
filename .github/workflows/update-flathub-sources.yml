@@ -279,10 +279,11 @@ jobs:
         echo "Latest commit: $LATEST_COMMIT"
         echo "Repository URL: $REPO_URL"
 
-        # Create a more robust Python script to handle the update
+        # Create Python script
         cat > update_manifest.py << 'EOF'
         import yaml
         import sys
+        import re
 
         latest_commit = sys.argv[1]
         repo_url = sys.argv[2]
@@ -291,39 +292,67 @@ jobs:
         print(f'Updating {filename} with commit: {latest_commit}')
         print(f'Using repository: {repo_url}')
 
-        # Load the YAML file
+        # Read the original file
         with open(filename, 'r') as f:
-            data = yaml.safe_load(f)
+            content = f.read()
 
-        # Find the librelinkupdesktop module and update its git source
-        if 'modules' in data:
-            for module in data['modules']:
-                if module.get('name') == 'librelinkupdesktop':
-                    if 'sources' in module:
-                        for source in module['sources']:
-                            if source.get('type') == 'git':
-                                print(f"Found git source: {source.get('url')}")
-                                source['url'] = repo_url
-                                source['commit'] = latest_commit
-                                print("✅ Updated git source")
-                                break
-                        else:
-                            print("❌ No git source found in sources")
-                    else:
-                        print("❌ No sources found in module")
+        # Pattern to find and update the git source for librelinkupdesktop
+        pattern = r'''(?x)
+        (name:\s*librelinkupdesktop
+        (?:.|\n)*?
+        sources:
+        (?:.|\n)*?
+        - type:\s*git
+        (?:.|\n)*?
+        url:\s*)[^\n]+
+        ((?:.|\n)*?
+        commit:\s*)[^\n]+
+        '''
+
+        replacement = fr'\1{repo_url}\2{latest_commit}'
+
+        updated_content, count = re.subn(pattern, replacement, content)
+
+        if count > 0:
+            print("✅ Successfully updated git source and commit")
+            with open(filename, 'w') as f:
+                f.write(updated_content)
+        else:
+            print("❌ Failed to find and update the git source")
+            # Fallback to simple string replacement
+            lines = content.split('\n')
+            in_target_module = False
+            in_sources = False
+            in_git_source = False
+            updated = False
+
+            for i, line in enumerate(lines):
+                if 'name: librelinkupdesktop' in line:
+                    in_target_module = True
+                elif in_target_module and line.strip().startswith('name:') and 'librelinkupdesktop' not in line:
+                    in_target_module = False
+                    in_sources = False
+                elif in_target_module and 'sources:' in line:
+                    in_sources = True
+                elif in_sources and not line.startswith(' ') and not line.startswith('-') and line.strip():
+                    in_sources = False
+                elif in_sources and 'type: git' in line:
+                    in_git_source = True
+                elif in_git_source and line.strip().startswith('url:'):
+                    lines[i] = f'    url: {repo_url}'
+                elif in_git_source and line.strip().startswith('commit:'):
+                    lines[i] = f'    commit: {latest_commit}'
+                    updated = True
                     break
+
+            if updated:
+                with open(filename, 'w') as f:
+                    f.write('\n'.join(lines))
+                print("✅ Updated using fallback method")
             else:
-                print("❌ librelinkupdesktop module not found")
-
-        # Write the updated YAML back
-        with open(filename, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, sort_keys=False, width=1000)
-
-        print('✅ Manifest updated successfully')
+                print("❌ All update methods failed")
+                sys.exit(1)
         EOF
-
-        # Install PyYAML if not available
-        python3 -c "import yaml" 2>/dev/null || pip3 install PyYAML
 
         python3 update_manifest.py "$LATEST_COMMIT" "$REPO_URL"
 
