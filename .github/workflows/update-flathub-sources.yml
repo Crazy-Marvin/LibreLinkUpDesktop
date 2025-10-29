@@ -1,9 +1,15 @@
 name: Flatpak Build and Sync
 
+env:
+  TARGET_REPO: lkavindu199/test_libre
+  SOURCE_REPO: ${{ github.repository }}
+
 on:
   push:
     tags:
       - 'flathubbuild-*'
+  release:
+    types: [created, edited]
   workflow_dispatch:
 
 jobs:
@@ -140,12 +146,24 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
+
+        # Check if this is a tag trigger or branch trigger
+        if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+          echo "Tag trigger detected - pushing to main branch instead"
+          BRANCH_NAME="main"
+          git checkout $BRANCH_NAME
+        else
+          # For branch pushes
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          git checkout -b $BRANCH_NAME
+        fi
+
         git add generated-sources.json
 
         # Check if there are changes to commit
         if ! git diff --staged --quiet; then
           git commit -m "Update generated-sources.json for Flatpak build [skip ci]"
-          git push
+          git push origin $BRANCH_NAME
           echo "Successfully pushed updated generated-sources.json to repository"
           echo "has_changes=true" >> $GITHUB_OUTPUT
         else
@@ -180,7 +198,7 @@ jobs:
     - name: Checkout target repo
       uses: actions/checkout@v4
       with:
-        repository: lkavindu199/test_libre
+        repository: ${{ env.TARGET_REPO }}
         token: ${{ secrets.TARGET_REPO_TOKEN }}
         path: target-repo
         ref: main
@@ -208,7 +226,7 @@ jobs:
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
-          git commit -m "Auto-sync: Update generated-sources.json from LibreLinkUpDesktop_new1"
+          git commit -m "Auto-sync: Update generated-sources.json"
           git push
           echo "Changes pushed successfully"
         fi
@@ -227,7 +245,7 @@ jobs:
     - name: Checkout target repo
       uses: actions/checkout@v4
       with:
-        repository: lkavindu199/test_libre
+        repository: ${{ env.TARGET_REPO }}
         token: ${{ secrets.TARGET_REPO_TOKEN }}
         path: target-repo
 
@@ -236,65 +254,89 @@ jobs:
       run: |
         echo "latest_commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
-    - name: Update manifest with Python
+    - name: Update manifest with dynamic repository
       run: |
         cd target-repo
 
         LATEST_COMMIT="${{ steps.commit-info.outputs.latest_commit }}"
+        REPO_URL="https://github.com/${{ env.SOURCE_REPO }}.git"
 
+        echo "Target Repository: ${{ env.TARGET_REPO }}"
+        echo "Source Repository: ${{ env.SOURCE_REPO }}"
+        echo "Latest commit: $LATEST_COMMIT"
+        echo "Repository URL: $REPO_URL"
+
+        # Use a Python script with proper variable substitution
         python3 -c "
-        import re
-
         latest_commit = '$LATEST_COMMIT'
+        repo_url = '$REPO_URL'
 
-        print(f'Updating with commit: {latest_commit}')
+        print(f'Updating manifest with commit: {latest_commit}')
+        print(f'Using repository: {repo_url}')
 
-        # Read file
         with open('rocks.poopjournal.librelinkupdesktop.yml', 'r') as f:
-            content = f.read()
+            lines = f.readlines()
 
-        # Find ALL git URLs in the file
-        git_urls = re.findall(r'url: (https://github\.com/[^\s]+\.git)', content)
-        print(f'Found {len(git_urls)} git URLs in total:')
-        for url in git_urls:
-            print(f'  - {url}')
+        new_lines = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
 
-        # Replace ANY git URL with our new URL
-        content = re.sub(
-            r'url: https://github\.com/[^/\s]+/[^\s]+\.git',
-            'url: https://github.com/lkavindu199/LibreLinkUpDesktop_new1.git',
-            content
-        )
-        print('✅ Replaced ALL git URLs with our repository')
+            # Look for the git source section
+            if 'type: git' in line and i + 2 < len(lines):
+                # Check if next lines contain url and commit
+                if 'url:' in lines[i+1] and 'commit:' in lines[i+2]:
+                    # Keep the type line
+                    new_lines.append(line)
+                    # Update URL line
+                    indent = lines[i+1].split('url:')[0]
+                    new_lines.append(f'{indent}url: {repo_url}\n')
+                    # Update commit line
+                    indent = lines[i+2].split('commit:')[0]
+                    new_lines.append(f'{indent}commit: {latest_commit}\n')
+                    i += 3  # Skip the original url and commit lines
+                    continue
 
-        # Replace branch (any branch name) after ANY git URL
-        content = re.sub(
-            r'(url: https://github\.com/lkavindu199/LibreLinkUpDesktop_new1\.git\s+)branch: \S+',
-            r'\\1branch: main',
-            content
-        )
-        print('✅ Updated branch to main for all occurrences')
+            new_lines.append(line)
+            i += 1
 
-        # Replace commit (any commit hash) after ANY branch line
-        content = re.sub(
-            r'(branch: [^\s]+\s+)commit: [a-f0-9]+',
-            f'\\1commit: {latest_commit}',
-            content
-        )
-        print('✅ Updated commit ID for all occurrences')
-
-        # Write back
         with open('rocks.poopjournal.librelinkupdesktop.yml', 'w') as f:
-            f.write(content)
+            f.writelines(new_lines)
 
-        print('✅ File updated successfully')
+        print('✅ Manifest updated successfully')
         "
 
-    - name: Verify all changes
+    - name: Verify the update worked
       run: |
         cd target-repo
-        echo "=== All git sources after update ==="
-        grep -A 2 -B 1 "url:" rocks.poopjournal.librelinkupdesktop.yml
+        echo "=== Verifying commit was updated ==="
+
+        CURRENT_REPO_URL="https://github.com/${{ env.SOURCE_REPO }}.git"
+        EXPECTED_COMMIT="${{ steps.commit-info.outputs.latest_commit }}"
+
+        echo "Looking for URL: $CURRENT_REPO_URL"
+        echo "Expected commit: $EXPECTED_COMMIT"
+
+        # Show the git section
+        grep -A 2 -B 1 "type: git" rocks.poopjournal.librelinkupdesktop.yml
+
+        # Extract the actual commit from the file
+        CURRENT_COMMIT=$(grep -A 2 "type: git" rocks.poopjournal.librelinkupdesktop.yml | grep "commit:" | awk '{print $2}')
+        echo "=== Current commit in file: $CURRENT_COMMIT ==="
+
+        if [ "$CURRENT_COMMIT" = "$EXPECTED_COMMIT" ]; then
+          echo "✅ Commit successfully updated!"
+        else
+          echo "❌ Commit update failed!"
+          echo "Expected: $EXPECTED_COMMIT"
+          echo "Found: $CURRENT_COMMIT"
+          exit 1
+        fi
+
+    - name: Show diff
+      run: |
+        cd target-repo
+        git diff
 
     - name: Commit and push
       run: |
@@ -307,7 +349,7 @@ jobs:
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
-          git commit -m "chore: Update manifest "
+          git commit -m "chore: Update manifest with latest commit ${{ steps.commit-info.outputs.latest_commit }}"
           git push
           echo "✅ Manifest updated successfully"
         fi
