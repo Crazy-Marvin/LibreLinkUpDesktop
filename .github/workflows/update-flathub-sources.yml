@@ -148,15 +148,20 @@ jobs:
         git config --local user.name "GitHub Action"
 
         # Check if this is a tag trigger or branch trigger
-        if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-          echo "Tag trigger detected - pushing to main branch instead"
-          BRANCH_NAME="main"
-          git checkout $BRANCH_NAME
-        else
+        #if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+        #  echo "Tag trigger detected - pushing to main branch instead"
+        #  BRANCH_NAME="main"
+        #  git checkout $BRANCH_NAME
+        #else
           # For branch pushes
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          git checkout -b $BRANCH_NAME
-        fi
+        #  BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        #  git checkout -b $BRANCH_NAME
+        #fi
+
+        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+
+        # Ensure we're on the correct branch
+        git checkout $BRANCH_NAME
 
         git add generated-sources.json
 
