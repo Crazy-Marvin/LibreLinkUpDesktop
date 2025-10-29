@@ -1,7 +1,7 @@
 name: Flatpak Build and Sync
 
 env:
-  TARGET_REPO: deviitorinc/rocks.poopjournal.librelinkupdesktop
+  TARGET_REPO: deviitorinc/rocks_poopjournal_librelinkupdesktop
   SOURCE_REPO: ${{ github.repository }}
 
 on:
