@@ -288,19 +288,29 @@ jobs:
             line = lines[i]
 
             # Look for the git source section
-            if 'type: git' in line and i + 2 < len(lines):
-                # Check if next lines contain url and commit
-                if 'url:' in lines[i+1] and 'commit:' in lines[i+2]:
-                    # Keep the type line
-                    new_lines.append(line)
-                    # Update URL line
-                    indent = lines[i+1].split('url:')[0]
-                    new_lines.append(f'{indent}url: {repo_url}\n')
-                    # Update commit line
-                    indent = lines[i+2].split('commit:')[0]
-                    new_lines.append(f'{indent}commit: {latest_commit}\n')
-                    i += 3  # Skip the original url and commit lines
-                    continue
+            if 'type: git' in line:
+                # Keep the type line
+                new_lines.append(line)
+                i += 1
+
+                # Process the entire git block until we find all relevant fields
+                while i < len(lines) and lines[i].startswith(' '):
+                    current_line = lines[i]
+
+                    if current_line.strip().startswith('url:'):
+                        # Update URL
+                        indent = current_line.split('url:')[0]
+                        new_lines.append(f'{indent}url: {repo_url}\n')
+                    elif current_line.strip().startswith('commit:'):
+                        # Update commit
+                        indent = current_line.split('commit:')[0]
+                        new_lines.append(f'{indent}commit: {latest_commit}\n')
+                    else:
+                        # Keep other lines (like tag, etc.) as-is
+                        new_lines.append(current_line)
+
+                    i += 1
+                continue
 
             new_lines.append(line)
             i += 1
