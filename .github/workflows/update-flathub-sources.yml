@@ -1,7 +1,7 @@
 name: Flatpak Build and Sync
 
 env:
-  TARGET_REPO: deviitorinc/rocks_poopjournal_librelinkupdesktop
+  TARGET_REPO: lkavindu199/test
   SOURCE_REPO: ${{ github.repository }}
 
 on:
