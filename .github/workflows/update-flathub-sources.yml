@@ -78,14 +78,6 @@ jobs:
         export PATH="$HOME/.local/bin:$PATH"
         flatpak-node-generator npm package-lock.json
 
-        # Ensure the file always has changes by adding a metadata entry
-        if [ -f generated-sources.json ]; then
-          # Use jq to add a workflow metadata entry
-          jq '. + [{ "type": "metadata", "generated_at": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'", "workflow_run": "'$GITHUB_RUN_ID'", "purpose": "flatpak_build" }]' generated-sources.json > generated-sources.json.tmp
-          mv generated-sources.json.tmp generated-sources.json
-          echo "✅ Added metadata to ensure unique content"
-        fi
-
         echo "=== Generated files ==="
         ls -la generated-sources.json || echo "No generated-sources.json created"
 
