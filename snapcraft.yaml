@@ -46,7 +46,7 @@ parts:
     source: .
     override-build: |
         # Configure proxy for Electron download if a proxy is set
-        if [ -n "$http_proxy" ]; then
+        if [ -n "${http_proxy:-}" ]; then
           export ELECTRON_GET_USE_PROXY=1
           export GLOBAL_AGENT_HTTP_PROXY="${http_proxy}"
           export GLOBAL_AGENT_HTTPS_PROXY="${http_proxy}"
