@@ -275,7 +275,7 @@ jobs:
         cat > update_manifest.py << 'EOF'
         import yaml
         import sys
-        import re
+        import ruamel.yaml
 
         latest_commit = sys.argv[1]
         repo_url = sys.argv[2]
@@ -284,67 +284,40 @@ jobs:
         print(f'Updating {filename} with commit: {latest_commit}')
         print(f'Using repository: {repo_url}')
 
-        # Read the original file
-        with open(filename, 'r') as f:
-            content = f.read()
+        # Use ruamel.yaml which preserves formatting and comments
+        yaml = ruamel.yaml.YAML()
+        yaml.preserve_quotes = True
+        yaml.indent(mapping=2, sequence=4, offset=2)
 
-        # Pattern to find and update the git source for librelinkupdesktop
-        pattern = r'''(?x)
-        (name:\s*librelinkupdesktop
-        (?:.|\n)*?
-        sources:
-        (?:.|\n)*?
-        - type:\s*git
-        (?:.|\n)*?
-        url:\s*)[^\n]+
-        ((?:.|\n)*?
-        commit:\s*)[^\n]+
-        '''
+        try:
+            with open(filename, 'r') as f:
+                data = yaml.load(f)
 
-        replacement = fr'\1{repo_url}\2{latest_commit}'
-
-        updated_content, count = re.subn(pattern, replacement, content)
-
-        if count > 0:
-            print("✅ Successfully updated git source and commit")
-            with open(filename, 'w') as f:
-                f.write(updated_content)
-        else:
-            print("❌ Failed to find and update the git source")
-            # Fallback to simple string replacement
-            lines = content.split('\n')
-            in_target_module = False
-            in_sources = False
-            in_git_source = False
-            updated = False
-
-            for i, line in enumerate(lines):
-                if 'name: librelinkupdesktop' in line:
-                    in_target_module = True
-                elif in_target_module and line.strip().startswith('name:') and 'librelinkupdesktop' not in line:
-                    in_target_module = False
-                    in_sources = False
-                elif in_target_module and 'sources:' in line:
-                    in_sources = True
-                elif in_sources and not line.startswith(' ') and not line.startswith('-') and line.strip():
-                    in_sources = False
-                elif in_sources and 'type: git' in line:
-                    in_git_source = True
-                elif in_git_source and line.strip().startswith('url:'):
-                    lines[i] = f'    url: {repo_url}'
-                elif in_git_source and line.strip().startswith('commit:'):
-                    lines[i] = f'    commit: {latest_commit}'
-                    updated = True
+            # Find and update the librelinkupdesktop module
+            for module in data.get('modules', []):
+                if module.get('name') == 'librelinkupdesktop':
+                    for source in module.get('sources', []):
+                        if source.get('type') == 'git':
+                            print(f"Found git source: {source.get('url')} -> {repo_url}")
+                            print(f"Updating commit: {source.get('commit')} -> {latest_commit}")
+                            source['url'] = repo_url
+                            source['commit'] = latest_commit
+                            break
                     break
 
-            if updated:
-                with open(filename, 'w') as f:
-                    f.write('\n'.join(lines))
-                print("✅ Updated using fallback method")
-            else:
-                print("❌ All update methods failed")
-                sys.exit(1)
+            # Write back with preserved formatting
+            with open(filename, 'w') as f:
+                yaml.dump(data, f)
+
+            print("✅ Successfully updated git source and commit")
+
+        except Exception as e:
+            print(f"❌ Error updating YAML: {e}")
+            sys.exit(1)
         EOF
+
+        # Install ruamel.yaml if not available
+        python3 -m pip install ruamel.yaml
 
         python3 update_manifest.py "$LATEST_COMMIT" "$REPO_URL"
 
