@@ -18,8 +18,6 @@ issues: https://github.com/Crazy-Marvin/LibreLinkUpDesktop/issues
 source-code: https://github.com/Crazy-Marvin/LibreLinkUpDesktop
 license: 'Apache-2.0'
 title: LibreLinkUpDesktop
-type: app
-icon: assets/logo.svg
 website: 'https://github.com/Crazy-Marvin/LibreLinkUpDesktop'
 
 confinement: strict
@@ -27,6 +25,8 @@ grade: stable
 
 architectures:
   - build-on: amd64
+
+icon: snap/gui/librelinkupdesktop.png
 
 apps:
   librelinkupdesktop:
@@ -46,7 +46,7 @@ parts:
     source: .
     override-build: |
         # Configure proxy for Electron download if a proxy is set
-        if [ -n "$http_proxy" ]; then
+        if [ -n "${http_proxy:-}" ]; then
           export ELECTRON_GET_USE_PROXY=1
           export GLOBAL_AGENT_HTTP_PROXY="${http_proxy}"
           export GLOBAL_AGENT_HTTPS_PROXY="${http_proxy}"
@@ -61,6 +61,12 @@ parts:
         npx electron-packager ./release/app librelinkupdesktop --overwrite --platform=linux --arch=x64 --out=release-build --prune=true --electron-version=31.3.1 --app-version=0.1.15
 
         cp -rv release-build/librelinkupdesktop-linux-x64 $SNAPCRAFT_PART_INSTALL/librelinkupdesktop
+
+        mkdir -p $SNAPCRAFT_PART_INSTALL/librelinkupdesktop/resources/assets/sounds
+        cp -rv assets/tray-logo.png $SNAPCRAFT_PART_INSTALL/librelinkupdesktop/resources/assets/ || true
+        cp -rv assets/logo.svg $SNAPCRAFT_PART_INSTALL/librelinkupdesktop/resources/assets/ || true
+        cp -rv assets/sounds/alert.mp3 $SNAPCRAFT_PART_INSTALL/librelinkupdesktop/resources/assets/sounds/ || true
+
         chmod -R 755 $SNAPCRAFT_PART_INSTALL/librelinkupdesktop
     build-snaps:
     - node/20/stable
