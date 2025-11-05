@@ -105,7 +105,7 @@ jobs:
         fi
 
     - name: Upload generated-sources.json as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: generated-sources-json
         path: generated-sources.json
