@@ -1,0 +1,220 @@
+name: Build by Command
+on:
+  pull_request:
+    types: [assigned, labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build_on_windows:
+    runs-on: windows-latest
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'assigned') ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/build windows'))
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Cache Node.js dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: windows-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            windows-node-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install --prefer-offline --legacy-peer-deps
+
+      - name: Build
+        run: npm run package
+
+      - name: List release folder
+        run: dir release/build/
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts-${{ github.run_id }}
+          path: release/build/
+
+      - name: Add comment with Windows artifacts
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            try {
+              const artifacts = fs.readdirSync('release/build');
+              const windowsArtifacts = artifacts.filter(file =>
+                file.endsWith('.msi') ||
+                file.endsWith('.appx') ||
+                file.endsWith('-setup.exe')
+              );
+
+              if (windowsArtifacts.length > 0) {
+                let comment = '## 🪟 Windows Build Artifacts\\n\\n';
+                windowsArtifacts.forEach(artifact => {
+                  comment += `- **${artifact}** - Built successfully\\n`;
+                });
+                comment += '\\nDownload artifacts from the Actions tab.';
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: comment
+                });
+              }
+            } catch (error) {
+              console.log('Error creating comment:', error);
+            }
+
+  build_on_ubuntu:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'assigned') ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/build linux'))
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Cache Node.js dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ubuntu-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ubuntu-node-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install --prefer-offline --legacy-peer-deps
+
+      - name: Build the Package
+        run: npm run package
+
+      - name: List release folder
+        run: ls -la release/build/
+
+      - name: Upload Ubuntu Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-artifacts-${{ github.run_id }}
+          path: |
+            release/build/*.deb
+            release/build/*.snap
+            release/build/*.AppImage
+
+      - name: Add comment with Linux artifacts
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            try {
+              const artifacts = fs.readdirSync('release/build');
+              const linuxArtifacts = artifacts.filter(file =>
+                file.endsWith('.deb') ||
+                file.endsWith('.snap') ||
+                file.endsWith('.AppImage')
+              );
+
+              if (linuxArtifacts.length > 0) {
+                let comment = '## 🐧 Linux Build Artifacts\\n\\n';
+                linuxArtifacts.forEach(artifact => {
+                  comment += `- **${artifact}** - Built successfully\\n`;
+                });
+                comment += '\\nDownload artifacts from the Actions tab.';
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: comment
+                });
+              }
+            } catch (error) {
+              console.log('Error creating comment:', error);
+            }
+
+  build_on_mac:
+    runs-on: macOS-latest
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'assigned') ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/build mac'))
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Cache Node.js dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: mac-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            mac-node-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install --prefer-offline --legacy-peer-deps
+
+      - name: Build the Package
+        run: npm run package
+
+      - name: List release folder
+        run: ls -la release/build/
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts-${{ github.run_id }}
+          path: |
+            release/build/*.dmg
+
+      - name: Add comment with macOS artifacts
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            try {
+              const artifacts = fs.readdirSync('release/build');
+              const macArtifacts = artifacts.filter(file =>
+                file.endsWith('.dmg')
+              );
+
+              if (macArtifacts.length > 0) {
+                let comment = '##  macOS Build Artifacts\\n\\n';
+                macArtifacts.forEach(artifact => {
+                  comment += `- **${artifact}** - Built successfully\\n`;
+                });
+                comment += '\\nDownload artifacts from the Actions tab.';
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: comment
+                });
+              }
+            } catch (error) {
+              console.log('Error creating comment:', error);
+            }
