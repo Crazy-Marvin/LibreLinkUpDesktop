@@ -6,6 +6,8 @@ on:
       - 'stage-v*'
   pull_request:
     types: [assigned]
+  release:
+    types: [edited]
 
 permissions:
   contents: write
@@ -41,7 +43,7 @@ jobs:
 
       - name: Upload Windows Artifacts for PR
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: windows-artifacts
           path: release/build/
@@ -88,7 +90,7 @@ jobs:
 
       - name: Upload Ubuntu Artifacts for PR
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ubuntu-artifacts
           path: |
@@ -138,7 +140,7 @@ jobs:
 
       - name: Upload macOS Artifacts for PR
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: macos-artifacts
           path: |
