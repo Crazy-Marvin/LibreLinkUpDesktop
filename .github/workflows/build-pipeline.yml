@@ -42,7 +42,7 @@ jobs:
         run: dir release/build/
 
       - name: Upload Windows Artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: windows-artifacts-${{ github.run_id }}
           path: release/build/
@@ -97,7 +97,7 @@ jobs:
         run: ls -la release/build/
 
       - name: Upload Ubuntu Artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ubuntu-artifacts-${{ github.run_id }}
           path: |
@@ -155,7 +155,7 @@ jobs:
         run: ls -la release/build/
 
       - name: Upload macOS Artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: macos-artifacts-${{ github.run_id }}
           path: |
