@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Cache Node.js dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.npm
           key: windows-node-${{ hashFiles('package-lock.json') }}
@@ -75,7 +75,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Cache Node.js dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.npm
           key: ubuntu-node-${{ hashFiles('package-lock.json') }}
@@ -133,7 +133,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Cache Node.js dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.npm
           key: mac-node-${{ hashFiles('package-lock.json') }}
