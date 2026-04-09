@@ -1,5 +1,6 @@
 import { ipcMain, app} from "electron";
 import { getMainWindow } from './main';
+import { WindowModeManager } from './windowMode';
 import path from 'path';
 import fs from 'fs';
 
@@ -59,9 +60,12 @@ export const registerAlertHandler = () => {
   ipcMain.on("trigger-warning-alerts", (event, alertOptions) => {
     const mainWindow = getMainWindow();
     if (mainWindow && alertOptions.bringToFrontEnabled) {
+      const windowModeManager = new WindowModeManager('main-window');
+      const windowMode = windowModeManager.getWindowMode();
+      const shouldStayOnTop = windowMode === 'overlay' || windowMode === 'overlayTransparent';
       mainWindow.setAlwaysOnTop(true);
       mainWindow.show();
-      mainWindow.setAlwaysOnTop(false);
+      mainWindow.setAlwaysOnTop(shouldStayOnTop);
       mainWindow.focus();
     }
     if(mainWindow && alertOptions.flashWindowEnabled) {
