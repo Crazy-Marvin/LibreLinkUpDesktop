@@ -57,9 +57,13 @@ export const registerAlertHandler = () => {
   setupAlertSoundFile()
 
   ipcMain.on("trigger-warning-alerts", (event, alertOptions) => {
+    console.log('[ALERT] trigger-warning-alerts received', alertOptions);
     const mainWindow = getMainWindow();
+    console.log('[ALERT] mainWindow exists:', !!mainWindow, 'bringToFrontEnabled:', alertOptions?.bringToFrontEnabled);
     if (mainWindow && alertOptions.bringToFrontEnabled) {
+      console.log('[ALERT] Setting alwaysOnTop and showing window');
       mainWindow.setAlwaysOnTop(true, 'screen-saver');
+      mainWindow.setVisibleOnAllWorkspaces(true);
       mainWindow.show();
       mainWindow.focus();
       mainWindow.moveTop();
