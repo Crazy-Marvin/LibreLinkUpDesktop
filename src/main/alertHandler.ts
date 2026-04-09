@@ -4,6 +4,15 @@ import { WindowModeManager } from './windowMode';
 import path from 'path';
 import fs from 'fs';
 
+function normalizeWindowMode(
+  mode: unknown,
+): 'overlay' | 'windowed' | 'overlayTransparent' {
+  if (mode === 'overlay' || mode === 'overlayTransparent') {
+    return mode;
+  }
+  return 'windowed';
+}
+
 const  setupAlertSoundFile = ()  => {
   const appDataDir = app.getPath('userData');
   console.log('App Data directory:', appDataDir);
@@ -60,17 +69,26 @@ export const registerAlertHandler = () => {
   ipcMain.on("trigger-warning-alerts", (event, alertOptions) => {
     const mainWindow = getMainWindow();
     if (mainWindow && alertOptions.bringToFrontEnabled) {
-      const windowModeManager = new WindowModeManager('main-window');
-      const windowMode = windowModeManager.getWindowMode();
-
-      mainWindow.setAlwaysOnTop(true);
-      mainWindow.show();
-      
-      if (windowMode === 'windowed') {
-        mainWindow.setAlwaysOnTop(false);
+      let mode: 'overlay' | 'windowed' | 'overlayTransparent' = 'windowed';
+      try {
+        mode = normalizeWindowMode(
+          new WindowModeManager('main-window').getWindowMode(),
+        );
+      } catch {
+        mode = 'windowed';
       }
 
-      mainWindow.focus();
+      if (mode === 'overlay' || mode === 'overlayTransparent') {
+        mainWindow.setAlwaysOnTop(true);
+        mainWindow.show();
+        mainWindow.focus();
+      } else {
+        mainWindow.setAlwaysOnTop(true);
+        mainWindow.show();
+        mainWindow.setAlwaysOnTop(false);
+        mainWindow.focus();
+        mainWindow.moveTop();
+      }
     }
     if(mainWindow && alertOptions.flashWindowEnabled) {
       mainWindow.flashFrame(true);
