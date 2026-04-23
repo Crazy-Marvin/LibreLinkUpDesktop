@@ -44,7 +44,6 @@ function SidebarButton({
 }
 
 export default function SettingsLayout({ children }: Props) {
-  const navigate = useNavigate();
   const { t } = useTranslation();
 
   return (
