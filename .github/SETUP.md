@@ -24,6 +24,7 @@ Note: Executables can be found in `release/build` folder.
 
 A [release](https://github.com/Crazy-Marvin/LibreLinkUpDesktop/releases)
 should include those executables:
+
 - AppImage
 - snap
 - deb
