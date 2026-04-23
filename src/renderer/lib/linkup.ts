@@ -102,8 +102,6 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
     console.log("Unable to get the token: ", error);
     throw error;
   }
-
-  return null;
 }
 
 export async function getCGMData(request: GetGeneralRequest): Promise<string|null|{error: string, message: string}> {
