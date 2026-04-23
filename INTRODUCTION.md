@@ -3,14 +3,19 @@ Application to launcher the products the company offers.
 
 ## Building the application.
 Install NodeJS 20 on your machine. And goto the project root and run following commands.
+
 ```bash
 npm run install
 ```
+
 In order to generate the executables. Run following. 
+
 ```bash
 npm run package
 ```
+
 To generate executables for all platforms run following.
+
 ```bash
 npm run package-all
 ```
