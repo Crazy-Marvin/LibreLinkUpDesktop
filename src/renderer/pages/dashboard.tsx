@@ -3,10 +3,7 @@ import { BaseLayout } from '@/layouts/base-layout';
 import { useAuthStore } from '@/stores/auth';
 import { getCGMData } from '@/lib/linkup';
 import { TrendArrow } from '@/components/ui/trend-arrow';
-import {
-  EnterFullScreenIcon,
-  GearIcon,
-} from '@radix-ui/react-icons';
+import { GearIcon } from '@radix-ui/react-icons';
 import { useNavigate } from 'react-router-dom';
 import { LoadingScreen } from '@/components/ui/loading';
 import { useClearSession } from '@/hooks/session';
