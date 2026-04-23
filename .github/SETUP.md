@@ -33,7 +33,7 @@ should include those executables:
 - portable
 - pkg
 
-The ```version``` in the ```/release/app/package.json``` needs to be
+The ```version``` in the ```/release/app/package.json```, ```snap/gui/librelinkupdesktop.desktop``` and ```flathub/rocks.poopjournal.librelinkupdesktop.metainfo.xml``` need to be
 increased following the rules of [Semantic Versioning](https://semver.org/).
 
 ## Customizing the application
