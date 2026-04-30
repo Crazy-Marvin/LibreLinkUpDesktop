@@ -1,6 +1,6 @@
 name: librelinkupdesktop
 base: core22
-version: '0.1.15'
+version: '0.1.16'
 summary: LibreLinkUpDesktop
 description: |
   This is a desktop application that fetches your blood sugar from LibreLinkUp.
@@ -58,7 +58,7 @@ parts:
         npx cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.main.prod.ts
         npx cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.prod.ts
 
-        npx electron-packager ./release/app librelinkupdesktop --overwrite --platform=linux --arch=x64 --out=release-build --prune=true --electron-version=31.3.1 --app-version=0.1.15
+        npx electron-packager ./release/app librelinkupdesktop --overwrite --platform=linux --arch=x64 --out=release-build --prune=true --electron-version=31.3.1 --app-version=0.1.16
 
         cp -rv release-build/librelinkupdesktop-linux-x64 $SNAPCRAFT_PART_INSTALL/librelinkupdesktop
 
