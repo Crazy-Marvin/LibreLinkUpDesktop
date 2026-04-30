@@ -26,13 +26,13 @@ sudo apt install flatpak-builder
 ## Process
 
 1. **Clone the Repository:**   
-   Clone or fork the Flathub repository from https://github.com/flathub/rocks.poopjournal.librelinkupdesktop.
+   Clone or fork the Flathub repository from [https://github.com/flathub/rocks.poopjournal.librelinkupdesktop](https://github.com/flathub/rocks.poopjournal.librelinkupdesktop).
 
 2. **Update the Manifest:**   
    Modify the manifest file with the new tag and commit the changes.
 
 3. **Generate Generated Sources:**   
-   To build locally, you may copy the generated sources from https://github.com/Crazy-Marvin/LibreLinkUpDesktop or regenerate a new file as described in the "Updating Node Modules" section.
+   To build locally, you may copy the generated sources from [https://github.com/Crazy-Marvin/LibreLinkUpDesktop](https://github.com/Crazy-Marvin/LibreLinkUpDesktop) or regenerate a new file as described in the "Updating Node Modules" section.
 
 4. **Build and Install:**   
    Execute the command `flatpak-builder --user --install --force-clean build rocks.poopjournal.librelinkupdesktop.yml` to build and install the application.
@@ -54,16 +54,16 @@ If the node modules have been updated, follow these steps to update the `generat
 
 #### Setup
 
-1. Clone the Flatpak Builder Tools repository from https://github.com/flatpak/flatpak-builder-tools.
+1. Clone the Flatpak Builder Tools repository from [https://github.com/flatpak/flatpak-builder-tools](https://github.com/flatpak/flatpak-builder-tools).
 
-2. Navigate to the `node` directory and install the tools using `pipx install .`. For more details, refer to the README at https://github.com/flatpak/flatpak-builder-tools/blob/master/node/README.md.
+2. Navigate to the `node` directory and install the tools using `pipx install .`. For more details, refer to the README at [https://github.com/flatpak/flatpak-builder-tools/blob/master/node/README.md](https://github.com/flatpak/flatpak-builder-tools/blob/master/node/README.md).
 
 3. Ensure your PATH is correctly set up with `pipx ensurepath`.
 
 ### Process
 
 1. **Clone the Source Repository:**   
-   Clone the LibreLinkUpDesktop source repository from https://github.com/Crazy-Marvin/LibreLinkUpDesktop.
+   Clone the LibreLinkUpDesktop source repository from [https://github.com/Crazy-Marvin/LibreLinkUpDesktop](https://github.com/Crazy-Marvin/LibreLinkUpDesktop).
 
 2. **Prepare the Directory:**   
    Ensure the `node_modules` folder does not exist in your clone of the repository.
