@@ -51,7 +51,7 @@ jobs:
 
       - name: Add comment with Windows artifacts
         if: github.event_name == 'issue_comment'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             try {
@@ -111,7 +111,7 @@ jobs:
 
       - name: Add comment with Linux artifacts
         if: github.event_name == 'issue_comment'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             try {
@@ -169,7 +169,7 @@ jobs:
 
       - name: Add comment with macOS artifacts
         if: github.event_name == 'issue_comment'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             try {
