@@ -34,8 +34,8 @@ should include those executables:
 - portable
 - pkg
 
-The ```version``` in the ```/release/app/package.json```, ```snap/gui/librelinkupdesktop.desktop``` and ```flathub/rocks.poopjournal.librelinkupdesktop.metainfo.xml``` need to be
-increased following the rules of [Semantic Versioning](https://semver.org/).
+The ```version``` in the ```package.json```, ```/release/app/package.json```, ```snap/gui/librelinkupdesktop.desktop```, ```snapcraft.yaml``` and ```flathub/rocks.poopjournal.librelinkupdesktop.metainfo.xml``` need to be
+increased ([example PR](https://github.com/Crazy-Marvin/LibreLinkUpDesktop/pull/523/changes)) following the rules of [Semantic Versioning](https://semver.org/).
 
 ## Customizing the application
 
