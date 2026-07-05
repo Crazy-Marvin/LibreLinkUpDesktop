@@ -22,7 +22,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
@@ -182,7 +182,7 @@ jobs:
 
     steps:
     - name: Checkout main repo
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
 
@@ -193,7 +193,7 @@ jobs:
         path: ./
 
     - name: Checkout target repo
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         repository: ${{ env.TARGET_REPO }}
         token: ${{ secrets.TARGET_REPO_TOKEN }}
@@ -235,7 +235,7 @@ jobs:
 
     steps:
     - name: Checkout main repo
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
 
@@ -246,7 +246,7 @@ jobs:
         echo "Current commit: $(git rev-parse HEAD)"
 
     - name: Checkout target repo
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         repository: ${{ env.TARGET_REPO }}
         token: ${{ secrets.TARGET_REPO_TOKEN }}
