@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { BaseLayout } from '@/layouts/base-layout';
 import { cn } from '@/lib/utils';
 import {
-  ArrowLeftIcon,
   MixerVerticalIcon,
   PersonIcon,
   BellIcon,
