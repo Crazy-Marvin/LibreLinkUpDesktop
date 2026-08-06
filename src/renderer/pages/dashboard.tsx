@@ -28,7 +28,6 @@ const LOW = 70;
 const HIGH = 240;
 
 export default function DashboardPage() {
-  const { clearSession } = useClearSession();
   const navigate = useNavigate();
   const token = useAuthStore((state) => state.token);
   const country = useAuthStore((state) => state.country);
