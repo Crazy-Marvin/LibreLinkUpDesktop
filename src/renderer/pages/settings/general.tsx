@@ -2,7 +2,6 @@ import { ThemeType, useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
 import { ToggleSwitch } from "@/components/ui/toggle-switch"
 import SettingsLayout from "@/layouts/settings-layout"
-import { cn } from "@/lib/utils"
 import { useNavigate } from "react-router-dom"
 import {
   Select,
