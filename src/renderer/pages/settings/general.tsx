@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button"
 import { ToggleSwitch } from "@/components/ui/toggle-switch"
 import SettingsLayout from "@/layouts/settings-layout"
 import { cn } from "@/lib/utils"
-import { useNavigate } from "react-router-dom"
 import {
   Select,
   SelectContent,
@@ -18,7 +17,6 @@ import { setRedirectTo, sendRefreshPrimaryWindow, setWindowMode, getLocalStorage
 import { useEffect, useState, useCallback  } from 'react';
 
 export default function SettingsGeneralPage() {
-  const navigate = useNavigate()
   const { i18n, t } = useTranslation()
   const theme = localStorage.getItem('vite-ui-theme')
   const language = useAuthStore((state) => state.language)
