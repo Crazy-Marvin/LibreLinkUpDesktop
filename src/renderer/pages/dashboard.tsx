@@ -35,7 +35,6 @@ export default function DashboardPage() {
   const accountId = useAuthStore((state) => state.accountId);
   const [graphData, setGraphData] = useState<any>({});
   const [isReady, setIsReady] = useState(false);
-  const [trayVisible, setTrayVisible] = useState<boolean>(true);
 
   const updateTrayManually = () => {
     if (graphData?.glucoseMeasurement?.ValueInMgPerDl !== undefined &&
