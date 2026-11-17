@@ -195,6 +195,7 @@ const getWindowOptions = (windowMode: 'overlay' | 'windowed' | 'overlayTranspare
       height: 600,
       alwaysOnTop: true,
       frame: false,
+      skipTaskbar: true,
     };
   }
   if (windowMode === 'overlayTransparent') {
@@ -207,6 +208,7 @@ const getWindowOptions = (windowMode: 'overlay' | 'windowed' | 'overlayTranspare
       transparent: true,
       resizable: false,
       hasShadow: false,
+      skipTaskbar: true,
     };
   }
   else if (windowMode === 'windowed') {
