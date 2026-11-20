@@ -15,7 +15,12 @@ export default function App() {
       window.location.reload();
     };
 
-    const unsubscribe = window.electron.ipcRenderer.on('logout-event', handleLogout);
+    const ipc = window.electron?.ipcRenderer;
+    if (!ipc) {
+      return undefined;
+    }
+
+    const unsubscribe = ipc.on('logout-event', handleLogout);
 
     return () => {
       unsubscribe();

@@ -74,5 +74,9 @@
     "Max Value": "උපරිම අගය",
     "Enter Value": "අගය ඇතුළත් කරන්න",
     "Apply Changes": "වෙනස්කම් යොදන්න",
-    "Show glucose values in tray": "පද්ධති තැටිය"
+    "Show glucose values in tray": "පද්ධති තැටිය",
+    "sensorConnectionLostWithAge": "සංවේදක සම්බන්ධතාව නැති වී ඇති විය හැක. {{age}} කාලයක් නව අගයක් නැත.",
+    "sensorConnectionLostUnknownAge": "සංවේදක සම්බන්ධතාව නැති වී ඇති විය හැක. නව අගයක් නොමැත.",
+    "unableToFetchGlucoseData": "ග්ලූකෝස් දත්ත ලබා ගත නොහැකි විය. නැවත උත්සාහ කරන්න.",
+    "failedToLoadGlucoseData": "ග්ලූකෝස් දත්ත පූරණය කිරීම අසාර්ථක විය. ඔබගේ සම්බන්ධතාව පරීක්ෂා කරන්න."
 }

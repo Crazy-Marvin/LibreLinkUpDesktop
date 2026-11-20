@@ -74,5 +74,9 @@
     "Max Value": "الحد الأقصى",
     "Enter Value": "أدخل القيمة",
     "Apply Changes": "تطبيق التغييرات",
-    "Show glucose values in tray": "شريط النظام"
+    "Show glucose values in tray": "شريط النظام",
+    "sensorConnectionLostWithAge": "قد تكون الاتصال بالمستشعر قد فُقد. لا توجد قراءة جديدة منذ {{age}}.",
+    "sensorConnectionLostUnknownAge": "قد تكون الاتصال بالمستشعر قد فُقد. لا تتوفر قراءة جديدة.",
+    "unableToFetchGlucoseData": "تعذّر جلب بيانات الجلوكوز. يرجى المحاولة مرة أخرى.",
+    "failedToLoadGlucoseData": "فشل تحميل بيانات الجلوكوز. يرجى التحقق من اتصالك."
 }

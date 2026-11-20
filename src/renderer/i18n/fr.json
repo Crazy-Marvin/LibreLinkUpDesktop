@@ -74,5 +74,9 @@
     "Min Value": "Valeur minimale",
     "Upload Sound": "Télécharger du son",
     "Enter Value": "Entrez la valeur",
-    "Apply Changes": "Appliquer les modifications"
+    "Apply Changes": "Appliquer les modifications",
+    "sensorConnectionLostWithAge": "La connexion au capteur est peut-être perdue. Aucune nouvelle valeur depuis {{age}}.",
+    "sensorConnectionLostUnknownAge": "La connexion au capteur est peut-être perdue. Aucune nouvelle valeur disponible.",
+    "unableToFetchGlucoseData": "Impossible de récupérer les données de glycémie. Veuillez réessayer.",
+    "failedToLoadGlucoseData": "Échec du chargement des données de glycémie. Vérifiez votre connexion."
 }
