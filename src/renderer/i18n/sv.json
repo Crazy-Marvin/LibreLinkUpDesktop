@@ -74,5 +74,9 @@
     "Max Value": "Högsta värde",
     "Enter Value": "Ange värde",
     "Apply Changes": "Applicera ändringar",
-    "Show glucose values in tray": "Systemfält"
+    "Show glucose values in tray": "Systemfält",
+    "sensorConnectionLostWithAge": "Anslutningen till sensorn kan vara förlorad. Inget nytt värde på {{age}}.",
+    "sensorConnectionLostUnknownAge": "Anslutningen till sensorn kan vara förlorad. Inget nytt värde finns tillgängligt.",
+    "unableToFetchGlucoseData": "Kunde inte hämta glukosdata. Försök igen.",
+    "failedToLoadGlucoseData": "Kunde inte läsa in glukosdata. Kontrollera din anslutning."
 }

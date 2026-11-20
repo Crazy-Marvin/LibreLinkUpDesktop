@@ -74,5 +74,9 @@
     "Bengali": "Bengalisch",
     "Japanese": "Japanisch",
     "Chinese": "Chinesisch",
-    "Show glucose values in tray": "Tray"
+    "Show glucose values in tray": "Tray",
+    "sensorConnectionLostWithAge": "Verbindung zum Sensor könnte verloren sein. Seit {{age}} kein neuer Wert.",
+    "sensorConnectionLostUnknownAge": "Verbindung zum Sensor könnte verloren sein. Kein neuer Wert verfügbar.",
+    "unableToFetchGlucoseData": "Glukosedaten konnten nicht abgerufen werden. Bitte versuchen Sie es erneut.",
+    "failedToLoadGlucoseData": "Glukosedaten konnten nicht geladen werden. Bitte prüfen Sie Ihre Verbindung."
 }

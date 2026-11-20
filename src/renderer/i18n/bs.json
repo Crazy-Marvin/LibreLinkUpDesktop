@@ -74,5 +74,9 @@
     "Max Value": "Maksimalna vrijednost",
     "Enter Value": "Unesi vrijednost",
     "Apply Changes": "Primijeni promjene",
-    "Show glucose values in tray": "Sistemski pladanj"
+    "Show glucose values in tray": "Sistemski pladanj",
+    "sensorConnectionLostWithAge": "Veza sa senzorom je možda prekinuta. Nema nove vrijednosti već {{age}}.",
+    "sensorConnectionLostUnknownAge": "Veza sa senzorom je možda prekinuta. Nema dostupne nove vrijednosti.",
+    "unableToFetchGlucoseData": "Nije moguće dohvatiti podatke o glukozi. Pokušajte ponovo.",
+    "failedToLoadGlucoseData": "Učitavanje podataka o glukozi nije uspjelo. Provjerite vezu."
 }

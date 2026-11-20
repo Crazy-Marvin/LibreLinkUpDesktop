@@ -74,5 +74,9 @@
     "Max Value": "Μέγιστη τιμή",
     "Enter Value": "Εισαγάγετε τιμή",
     "Apply Changes": "Εφαρμογή αλλαγών",
-    "Show glucose values in tray": "Δίσκος συστήματος"
+    "Show glucose values in tray": "Δίσκος συστήματος",
+    "sensorConnectionLostWithAge": "Η σύνδεση με τον αισθητήρα μπορεί να χάθηκε. Καμία νέα τιμή για {{age}}.",
+    "sensorConnectionLostUnknownAge": "Η σύνδεση με τον αισθητήρα μπορεί να χάθηκε. Δεν υπάρχει διαθέσιμη νέα τιμή.",
+    "unableToFetchGlucoseData": "Δεν ήταν δυνατή η ανάκτηση δεδομένων γλυκόζης. Δοκιμάστε ξανά.",
+    "failedToLoadGlucoseData": "Αποτυχία φόρτωσης δεδομένων γλυκόζης. Ελέγξτε τη σύνδεσή σας."
 }
