@@ -75,6 +75,7 @@
     "Enter Value": "Ange värde",
     "Apply Changes": "Applicera ändringar",
     "Show glucose values in tray": "Systemfält",
+    "Autostart on login": "Starta automatiskt vid inloggning",
     "sensorConnectionLostWithAge": "Anslutningen till sensorn kan vara förlorad. Inget nytt värde på {{age}}.",
     "sensorConnectionLostUnknownAge": "Anslutningen till sensorn kan vara förlorad. Inget nytt värde finns tillgängligt.",
     "unableToFetchGlucoseData": "Kunde inte hämta glukosdata. Försök igen.",

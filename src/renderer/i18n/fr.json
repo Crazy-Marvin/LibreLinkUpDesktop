@@ -75,6 +75,7 @@
     "Upload Sound": "Télécharger du son",
     "Enter Value": "Entrez la valeur",
     "Apply Changes": "Appliquer les modifications",
+    "Autostart on login": "Démarrer automatiquement à la connexion",
     "sensorConnectionLostWithAge": "La connexion au capteur est peut-être perdue. Aucune nouvelle valeur depuis {{age}}.",
     "sensorConnectionLostUnknownAge": "La connexion au capteur est peut-être perdue. Aucune nouvelle valeur disponible.",
     "unableToFetchGlucoseData": "Impossible de récupérer les données de glycémie. Veuillez réessayer.",

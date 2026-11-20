@@ -258,3 +258,11 @@ export const setTrayVisibility = async (visible: boolean) => {
     ipc.sendMessage('destroy-tray');
   }
 };
+
+export async function getOpenAtLogin(): Promise<boolean> {
+  return window.electron.ipcRenderer.invoke('get-open-at-login');
+}
+
+export async function setOpenAtLogin(enabled: boolean): Promise<boolean> {
+  return window.electron.ipcRenderer.invoke('set-open-at-login', enabled);
+}

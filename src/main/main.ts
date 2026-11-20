@@ -13,6 +13,7 @@ import { registerLogoutHandler, destroyLogoutHandler } from "./logoutHandler";
 import { registerRefreshHandler, destroyRefreshHandler } from "./refreshHandler";
 import { registerAlertHandler, destroyAlertHandler } from "./alertHandler";
 import { registerTrayHandler, destroyTrayHandler, setTrayMainWindow } from "./trayHandler";
+import { registerAutostartHandler, destroyAutostartHandler } from "./autostartHandler";
 import { destroyTray } from './../renderer/lib/trayManager';
 
 // class AppUpdater {
@@ -115,11 +116,17 @@ const createWindow = async () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined')
     }
-    if (process.env.START_MINIMIZED) {
-      mainWindow.minimize()
-      mainWindow.focus()
+    const loginLaunch = app.getLoginItemSettings();
+    const startedFromLogin =
+      loginLaunch.wasOpenedAtLogin || loginLaunch.wasOpenedAsHidden;
+    const startInBackground =
+      Boolean(process.env.START_MINIMIZED) ||
+      (startedFromLogin && windowMode === 'windowed');
+
+    if (startInBackground) {
+      mainWindow.hide();
     } else {
-      mainWindow.show()
+      mainWindow.show();
     }
 
     setTrayMainWindow(mainWindow);
@@ -206,6 +213,7 @@ const getWindowOptions = (windowMode: 'overlay' | 'windowed' | 'overlayTranspare
       alwaysOnTop: true,
       frame: false,
       transparent: true,
+      backgroundColor: '#00000000',
       resizable: false,
       hasShadow: false,
       skipTaskbar: true,
@@ -234,6 +242,7 @@ app.on('window-all-closed', () => {
   destroyRefreshHandler();
   destroyAlertHandler();
   destroyTrayHandler();
+  destroyAutostartHandler();
   destroyTray();
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
@@ -280,5 +289,6 @@ registerLogoutHandler();
 registerRefreshHandler();
 registerAlertHandler();
 registerTrayHandler();
+registerAutostartHandler();
 
 export const getMainWindow = () => mainWindow;

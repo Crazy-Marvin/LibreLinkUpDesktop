@@ -73,6 +73,7 @@
     "Portuguese": "Portoghese",
     "Chinese": "Cinese",
     "Show glucose values in tray": "Barra delle applicazioni",
+    "Autostart on login": "Avvio automatico all'accesso",
     "Japanese": "Giapponese",
     "Bengali": "Bengalese",
     "sensorConnectionLostWithAge": "La connessione al sensore potrebbe essere persa. Nessun nuovo valore da {{age}}.",

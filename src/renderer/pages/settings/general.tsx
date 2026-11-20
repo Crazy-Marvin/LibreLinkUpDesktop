@@ -14,7 +14,7 @@ import {
 import { useAuthStore } from "@/stores/auth"
 import { countries, languages, themes, resultUnits, windowModes } from "@/config/app"
 import { useTranslation } from "react-i18next"
-import { setRedirectTo, sendRefreshPrimaryWindow, setWindowMode, getLocalStorageWindowMode, getTrayVisibility, setTrayVisibility} from "@/lib/utils"
+import { setRedirectTo, sendRefreshPrimaryWindow, setWindowMode, getLocalStorageWindowMode, getTrayVisibility, setTrayVisibility, getOpenAtLogin, setOpenAtLogin } from "@/lib/utils"
 import { useEffect, useState, useCallback  } from 'react';
 
 export default function SettingsGeneralPage() {
@@ -59,6 +59,7 @@ export default function SettingsGeneralPage() {
   }, []);
 
   const [trayVisible, setTrayVisible] = useState<boolean>(true);
+  const [openAtLogin, setOpenAtLoginState] = useState<boolean>(false);
 
   useEffect(() => {
     const initializeTrayVisibility = () => {
@@ -69,12 +70,28 @@ export default function SettingsGeneralPage() {
     initializeTrayVisibility();
   }, []);
 
+  useEffect(() => {
+    const loadAutostart = async () => {
+      const enabled = await getOpenAtLogin();
+      setOpenAtLoginState(enabled);
+    };
+
+    void loadAutostart();
+  }, []);
+
   const handleToggleTray = useCallback(async (checked: boolean) => {
     setTrayVisible(checked);
     await setTrayVisibility(checked);
   }, []);
 
+  const handleToggleAutostart = useCallback(async (checked: boolean) => {
+    setOpenAtLoginState(checked);
+    const applied = await setOpenAtLogin(checked);
+    setOpenAtLoginState(applied);
+  }, []);
+
   const toggleSwitchKey = `tray-toggle-${trayVisible}`;
+  const autostartToggleKey = `autostart-toggle-${openAtLogin}`;
 
   return (
     <SettingsLayout>
@@ -165,6 +182,15 @@ export default function SettingsGeneralPage() {
             key={toggleSwitchKey}
             checked={trayVisible}
             onChange={handleToggleTray}
+          />
+        </div>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Autostart on login')}</p>
+          <ToggleSwitch
+            key={autostartToggleKey}
+            checked={openAtLogin}
+            onChange={handleToggleAutostart}
           />
         </div>
       </div>

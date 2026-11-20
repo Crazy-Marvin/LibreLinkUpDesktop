@@ -75,6 +75,7 @@
     "Hindi": "хинди",
     "Show glucose values in tray": "трее",
     "Japanese": "японский",
+    "Autostart on login": "Автозапуск при входе в систему",
     "sensorConnectionLostWithAge": "Связь с датчиком, возможно, потеряна. Нет нового значения уже {{age}}.",
     "sensorConnectionLostUnknownAge": "Связь с датчиком, возможно, потеряна. Новое значение недоступно.",
     "unableToFetchGlucoseData": "Не удалось получить данные глюкозы. Повторите попытку.",
