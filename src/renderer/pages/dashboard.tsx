@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BaseLayout } from '@/layouts/base-layout';
 import { useAuthStore } from '@/stores/auth';
-import { getCGMData } from '@/lib/linkup';
+import { getCGMData, isCgmApiError } from '@/lib/linkup';
 import { TrendArrow } from '@/components/ui/trend-arrow';
 import {
   EnterFullScreenIcon,
@@ -22,11 +23,26 @@ import {
   updateTrayNumber,
   getTrayVisibility,
   setTrayVisibility,
+  formatStaleDuration,
+  getMinutesSinceGlucoseReading,
+  isGlucoseReadingStale,
 } from '@/lib/utils';
 import { useGlucoseAlerts } from '@/hooks/useGlucoseAlerts';
 
 const LOW = 70;
 const HIGH = 240;
+
+type SensorConnectionStatus = {
+  lost: boolean
+  minutesSinceLastReading: number | null
+  detail: string | null
+}
+
+const initialConnectionStatus: SensorConnectionStatus = {
+  lost: false,
+  minutesSinceLastReading: null,
+  detail: null,
+};
 
 export default function DashboardPage() {
   const { clearSession } = useClearSession();
@@ -34,9 +50,14 @@ export default function DashboardPage() {
   const token = useAuthStore((state) => state.token);
   const country = useAuthStore((state) => state.country);
   const accountId = useAuthStore((state) => state.accountId);
+  const { t } = useTranslation();
   const [graphData, setGraphData] = useState<any>({});
   const [isReady, setIsReady] = useState(false);
   const [trayVisible, setTrayVisible] = useState<boolean>(true);
+  const [connectionStatus, setConnectionStatus] =
+    useState<SensorConnectionStatus>(initialConnectionStatus);
+  const graphDataRef = useRef<Record<string, unknown>>({});
+  const staleSensorToastShown = useRef(false);
 
   const updateTrayManually = () => {
     if (graphData?.glucoseMeasurement?.ValueInMgPerDl !== undefined &&
@@ -52,6 +73,62 @@ export default function DashboardPage() {
     }
   }
 
+  const notifySensorStaleOnce = (message: string) => {
+    if (staleSensorToastShown.current) {
+      return;
+    }
+    staleSensorToastShown.current = true;
+    toast.error(message);
+  };
+
+  const staleAgeLabel = (minutes: number | null): string => {
+    if (minutes === null) {
+      return t('sensorConnectionLostUnknownAge');
+    }
+    return t('sensorConnectionLostWithAge', {
+      age: formatStaleDuration(minutes),
+    });
+  };
+
+  const updateConnectionStatusFromReading = (
+    data: Record<string, unknown>,
+    apiErrorMessage?: string,
+  ) => {
+    const minutes = getMinutesSinceGlucoseReading(
+      data?.glucoseMeasurement as { Timestamp?: string; FactoryTimestamp?: string } | undefined,
+    );
+
+    if (apiErrorMessage) {
+      const detail = minutes !== null
+        ? staleAgeLabel(minutes)
+        : t('sensorConnectionLostUnknownAge');
+
+      const fullMessage = `${apiErrorMessage} ${detail}`;
+
+      setConnectionStatus({
+        lost: true,
+        minutesSinceLastReading: minutes,
+        detail: fullMessage,
+      });
+      return;
+    }
+
+    if (isGlucoseReadingStale(data)) {
+      const detail = staleAgeLabel(minutes);
+
+      setConnectionStatus({
+        lost: true,
+        minutesSinceLastReading: minutes,
+        detail,
+      });
+      notifySensorStaleOnce(detail);
+      return;
+    }
+
+    staleSensorToastShown.current = false;
+    setConnectionStatus(initialConnectionStatus);
+  };
+
   const populateGraphData = async () => {
     try {
       const data = await getCGMData({
@@ -60,37 +137,45 @@ export default function DashboardPage() {
         accountId: accountId ?? '',
       });
 
+      const previous = graphDataRef.current;
+
       if (data === null) {
-        setTimeout(() => {
-          toast.error('Unable to fetch glucose data. Please try again.');
-        }, 100);
-        setGraphData({}); // Set empty data to show dashboard with NaN
+        const message = t('unableToFetchGlucoseData');
+        if (Object.keys(previous).length > 0) {
+          updateConnectionStatusFromReading(previous, message);
+        } else {
+          setGraphData({});
+          updateConnectionStatusFromReading({}, message);
+        }
         setIsReady(true);
         return;
       }
 
-      if (data && typeof data === 'object' && 'error' in data) {
-        // Add a small delay to ensure toast is displayed after i18n changes
-        setTimeout(() => {
-          if (data.error === 'NO_CONNECTIONS') {
-            toast.error(data.message || 'No LibreLinkUp connections found. Please set up a connection in your Libre app.');
-          } else {
-            toast.error('Unable to fetch glucose data. Please try again.');
-          }
-        }, 100);
-        setGraphData({}); // Set empty data to show dashboard with NaN
+      if (isCgmApiError(data)) {
+        if (Object.keys(previous).length > 0) {
+          updateConnectionStatusFromReading(previous, data.message);
+        } else {
+          setGraphData({});
+          updateConnectionStatusFromReading({}, data.message);
+        }
         setIsReady(true);
         return;
       }
 
       setGraphData(data);
+      updateConnectionStatusFromReading(data);
       setIsReady(true);
     } catch (error) {
       console.log('Unable to getCGMData: ', error);
-      setTimeout(() => {
-        toast.error('Failed to load glucose data. Please check your connection.');
-      }, 100);
-      setGraphData({}); // Set empty data to show dashboard with NaN
+      const message = t('failedToLoadGlucoseData');
+      const previous = graphDataRef.current;
+
+      if (Object.keys(previous).length > 0) {
+        updateConnectionStatusFromReading(previous, message);
+      } else {
+        setGraphData({});
+        updateConnectionStatusFromReading({}, message);
+      }
       setIsReady(true);
     }
   };
@@ -129,6 +214,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    graphDataRef.current = graphData;
     updateTrayManually();
   }, [graphData]);
 
@@ -181,11 +267,15 @@ export default function DashboardPage() {
   const { dispatchAlert } = useGlucoseAlerts();
 
   useEffect(() => {
+    if (connectionStatus.lost) {
+      return;
+    }
+
     if (graphData?.glucoseMeasurement?.ValueInMgPerDl !== undefined &&
         graphData?.glucoseMeasurement?.ValueInMgPerDl !== null) {
       dispatchAlert(graphData.glucoseMeasurement.ValueInMgPerDl,graphData?.targetLow,graphData?.targetHigh);
     }
-  }, [graphData])
+  }, [graphData, connectionStatus.lost])
 
   if (!isReady) {
     return <LoadingScreen />;
@@ -227,6 +317,18 @@ export default function DashboardPage() {
           </svg>
           </div>
         </button>
+      )}
+      {connectionStatus.lost && connectionStatus.detail && (
+        <div
+          role="alert"
+          className={`absolute left-0 right-0 bottom-3 px-4 no-draggable ${
+            currentWindowMode === 'overlayTransparent' ? 'overlay-shadow' : ''
+          }`}
+        >
+          <p className="text-center text-white text-xs xs:text-sm font-medium bg-black/35 rounded-md px-3 py-2">
+            {connectionStatus.detail}
+          </p>
+        </div>
       )}
       <div className="flex items-center gap-3">
         <p
