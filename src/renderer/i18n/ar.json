@@ -75,6 +75,7 @@
     "Enter Value": "أدخل القيمة",
     "Apply Changes": "تطبيق التغييرات",
     "Show glucose values in tray": "شريط النظام",
+    "Autostart on login": "التشغيل التلقائي عند تسجيل الدخول",
     "sensorConnectionLostWithAge": "قد تكون الاتصال بالمستشعر قد فُقد. لا توجد قراءة جديدة منذ {{age}}.",
     "sensorConnectionLostUnknownAge": "قد تكون الاتصال بالمستشعر قد فُقد. لا تتوفر قراءة جديدة.",
     "unableToFetchGlucoseData": "تعذّر جلب بيانات الجلوكوز. يرجى المحاولة مرة أخرى.",

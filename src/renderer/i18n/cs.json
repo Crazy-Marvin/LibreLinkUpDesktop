@@ -75,6 +75,7 @@
     "Enter Value": "Zadejte hodnotu",
     "Apply Changes": "Použít změny",
     "Show glucose values in tray": "Systémový zásobník",
+    "Autostart on login": "Automaticky spustit po přihlášení",
     "sensorConnectionLostWithAge": "Spojení se senzorem mohlo být ztraceno. Žádná nová hodnota po dobu {{age}}.",
     "sensorConnectionLostUnknownAge": "Spojení se senzorem mohlo být ztraceno. Není k dispozici žádná nová hodnota.",
     "unableToFetchGlucoseData": "Nepodařilo se načíst data glukózy. Zkuste to znovu.",

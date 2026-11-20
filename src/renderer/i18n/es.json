@@ -75,6 +75,7 @@
     "Enter Value": "Introduce un valor",
     "Apply Changes": "Aplicar cambios",
     "Show glucose values in tray": "Bandeja",
+    "Autostart on login": "Iniciar automáticamente al iniciar sesión",
     "sensorConnectionLostWithAge": "La conexión con el sensor puede haberse perdido. Sin valor nuevo desde hace {{age}}.",
     "sensorConnectionLostUnknownAge": "La conexión con el sensor puede haberse perdido. No hay un valor nuevo disponible.",
     "unableToFetchGlucoseData": "No se pudieron obtener los datos de glucosa. Inténtelo de nuevo.",

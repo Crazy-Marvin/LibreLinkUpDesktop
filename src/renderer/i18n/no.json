@@ -75,6 +75,7 @@
     "Enter Value": "Skriv inn verdi",
     "Apply Changes": "Bruk endringene",
     "Show glucose values in tray": "Systemstatusfeltet",
+    "Autostart on login": "Start automatisk ved innlogging",
     "sensorConnectionLostWithAge": "Tilkoblingen til sensoren kan være tapt. Ingen ny verdi på {{age}}.",
     "sensorConnectionLostUnknownAge": "Tilkoblingen til sensoren kan være tapt. Ingen ny verdi er tilgjengelig.",
     "unableToFetchGlucoseData": "Kunne ikke hente glukosedata. Prøv igjen.",
