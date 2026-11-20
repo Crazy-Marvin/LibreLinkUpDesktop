@@ -56,8 +56,8 @@ export default function DashboardPage() {
   const [trayVisible, setTrayVisible] = useState<boolean>(true);
   const [connectionStatus, setConnectionStatus] =
     useState<SensorConnectionStatus>(initialConnectionStatus);
-  const lastConnectionAlertKey = useRef<string | null>(null);
   const graphDataRef = useRef<Record<string, unknown>>({});
+  const staleSensorToastShown = useRef(false);
 
   const updateTrayManually = () => {
     if (graphData?.glucoseMeasurement?.ValueInMgPerDl !== undefined &&
@@ -73,15 +73,12 @@ export default function DashboardPage() {
     }
   }
 
-  const notifyConnectionIssue = (alertKey: string, message: string) => {
-    if (lastConnectionAlertKey.current === alertKey) {
+  const notifySensorStaleOnce = (message: string) => {
+    if (staleSensorToastShown.current) {
       return;
     }
-
-    lastConnectionAlertKey.current = alertKey;
-    setTimeout(() => {
-      toast.error(message);
-    }, 100);
+    staleSensorToastShown.current = true;
+    toast.error(message);
   };
 
   const staleAgeLabel = (minutes: number | null): string => {
@@ -113,10 +110,6 @@ export default function DashboardPage() {
         minutesSinceLastReading: minutes,
         detail: fullMessage,
       });
-      notifyConnectionIssue(
-        `api:${apiErrorMessage}:${minutes ?? 'unknown'}`,
-        fullMessage,
-      );
       return;
     }
 
@@ -128,12 +121,12 @@ export default function DashboardPage() {
         minutesSinceLastReading: minutes,
         detail,
       });
-      notifyConnectionIssue(`stale:${minutes ?? 0}`, detail);
+      notifySensorStaleOnce(detail);
       return;
     }
 
+    staleSensorToastShown.current = false;
     setConnectionStatus(initialConnectionStatus);
-    lastConnectionAlertKey.current = null;
   };
 
   const populateGraphData = async () => {
