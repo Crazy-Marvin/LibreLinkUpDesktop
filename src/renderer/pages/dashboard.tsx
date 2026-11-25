@@ -1,41 +1,55 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BaseLayout } from '@/layouts/base-layout';
 import { useAuthStore } from '@/stores/auth';
-import { getCGMData } from '@/lib/linkup';
+import { getCGMData, isCgmApiError } from '@/lib/linkup';
 import { TrendArrow } from '@/components/ui/trend-arrow';
-import {
-  EnterFullScreenIcon,
-  GearIcon,
-} from '@radix-ui/react-icons';
-import { useNavigate } from 'react-router-dom';
+import { GearIcon } from '@radix-ui/react-icons';
 import { LoadingScreen } from '@/components/ui/loading';
-import { useClearSession } from '@/hooks/session';
 import { toast } from 'sonner';
 import {
   openNewWindow,
   setRedirectTo,
   getUserValue,
   getUserUnit,
-  getLocalStorageWindowMode,
+  getWindowMode,
+  setLocalStorageWindowMode,
   setWindowMode,
   updateTrayNumber,
   getTrayVisibility,
   setTrayVisibility,
+  formatStaleDuration,
+  getMinutesSinceGlucoseReading,
+  isGlucoseReadingStale,
 } from '@/lib/utils';
 import { useGlucoseAlerts } from '@/hooks/useGlucoseAlerts';
 
 const LOW = 70;
 const HIGH = 240;
 
+type SensorConnectionStatus = {
+  lost: boolean
+  minutesSinceLastReading: number | null
+  detail: string | null
+}
+
+const initialConnectionStatus: SensorConnectionStatus = {
+  lost: false,
+  minutesSinceLastReading: null,
+  detail: null,
+};
+
 export default function DashboardPage() {
-  const { clearSession } = useClearSession();
-  const navigate = useNavigate();
   const token = useAuthStore((state) => state.token);
   const country = useAuthStore((state) => state.country);
   const accountId = useAuthStore((state) => state.accountId);
+  const { t } = useTranslation();
   const [graphData, setGraphData] = useState<any>({});
   const [isReady, setIsReady] = useState(false);
-  const [trayVisible, setTrayVisible] = useState<boolean>(true);
+  const [connectionStatus, setConnectionStatus] =
+    useState<SensorConnectionStatus>(initialConnectionStatus);
+  const graphDataRef = useRef<Record<string, unknown>>({});
+  const staleSensorToastShown = useRef(false);
 
   const updateTrayManually = () => {
     if (graphData?.glucoseMeasurement?.ValueInMgPerDl !== undefined &&
@@ -51,6 +65,65 @@ export default function DashboardPage() {
     }
   }
 
+  const notifySensorStaleOnce = (message: string) => {
+    if (localStorage.getItem('windowMode') === 'overlayTransparent') {
+      return;
+    }
+    if (staleSensorToastShown.current) {
+      return;
+    }
+    staleSensorToastShown.current = true;
+    toast.error(message);
+  };
+
+  const staleAgeLabel = (minutes: number | null): string => {
+    if (minutes === null) {
+      return t('sensorConnectionLostUnknownAge');
+    }
+    return t('sensorConnectionLostWithAge', {
+      age: formatStaleDuration(minutes),
+    });
+  };
+
+  const updateConnectionStatusFromReading = (
+    data: Record<string, unknown>,
+    apiErrorMessage?: string,
+  ) => {
+    const minutes = getMinutesSinceGlucoseReading(
+      data?.glucoseMeasurement as { Timestamp?: string; FactoryTimestamp?: string } | undefined,
+    );
+
+    if (apiErrorMessage) {
+      const detail = minutes !== null
+        ? staleAgeLabel(minutes)
+        : t('sensorConnectionLostUnknownAge');
+
+      const fullMessage = `${apiErrorMessage} ${detail}`;
+
+      setConnectionStatus({
+        lost: true,
+        minutesSinceLastReading: minutes,
+        detail: fullMessage,
+      });
+      return;
+    }
+
+    if (isGlucoseReadingStale(data)) {
+      const detail = staleAgeLabel(minutes);
+
+      setConnectionStatus({
+        lost: true,
+        minutesSinceLastReading: minutes,
+        detail,
+      });
+      notifySensorStaleOnce(detail);
+      return;
+    }
+
+    staleSensorToastShown.current = false;
+    setConnectionStatus(initialConnectionStatus);
+  };
+
   const populateGraphData = async () => {
     try {
       const data = await getCGMData({
@@ -59,37 +132,45 @@ export default function DashboardPage() {
         accountId: accountId ?? '',
       });
 
+      const previous = graphDataRef.current;
+
       if (data === null) {
-        setTimeout(() => {
-          toast.error('Unable to fetch glucose data. Please try again.');
-        }, 100);
-        setGraphData({}); // Set empty data to show dashboard with NaN
+        const message = t('unableToFetchGlucoseData');
+        if (Object.keys(previous).length > 0) {
+          updateConnectionStatusFromReading(previous, message);
+        } else {
+          setGraphData({});
+          updateConnectionStatusFromReading({}, message);
+        }
         setIsReady(true);
         return;
       }
 
-      if (data && typeof data === 'object' && 'error' in data) {
-        // Add a small delay to ensure toast is displayed after i18n changes
-        setTimeout(() => {
-          if (data.error === 'NO_CONNECTIONS') {
-            toast.error(data.message || 'No LibreLinkUp connections found. Please set up a connection in your Libre app.');
-          } else {
-            toast.error('Unable to fetch glucose data. Please try again.');
-          }
-        }, 100);
-        setGraphData({}); // Set empty data to show dashboard with NaN
+      if (isCgmApiError(data)) {
+        if (Object.keys(previous).length > 0) {
+          updateConnectionStatusFromReading(previous, data.message);
+        } else {
+          setGraphData({});
+          updateConnectionStatusFromReading({}, data.message);
+        }
         setIsReady(true);
         return;
       }
 
       setGraphData(data);
+      updateConnectionStatusFromReading(data);
       setIsReady(true);
     } catch (error) {
       console.log('Unable to getCGMData: ', error);
-      setTimeout(() => {
-        toast.error('Failed to load glucose data. Please check your connection.');
-      }, 100);
-      setGraphData({}); // Set empty data to show dashboard with NaN
+      const message = t('failedToLoadGlucoseData');
+      const previous = graphDataRef.current;
+
+      if (Object.keys(previous).length > 0) {
+        updateConnectionStatusFromReading(previous, message);
+      } else {
+        setGraphData({});
+        updateConnectionStatusFromReading({}, message);
+      }
       setIsReady(true);
     }
   };
@@ -128,6 +209,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    graphDataRef.current = graphData;
     updateTrayManually();
   }, [graphData]);
 
@@ -158,8 +240,9 @@ export default function DashboardPage() {
   );
   useEffect(() => {
     const fetchWindowMode = async () => {
-      const mode = await getLocalStorageWindowMode();
+      const mode = await getWindowMode();
       setCurrentWindowMode(mode);
+      await setLocalStorageWindowMode(mode);
 
       if (mode === 'overlayTransparent') {
         document.body.style.background = 'transparent';
@@ -179,11 +262,15 @@ export default function DashboardPage() {
   const { dispatchAlert } = useGlucoseAlerts();
 
   useEffect(() => {
+    if (connectionStatus.lost) {
+      return;
+    }
+
     if (graphData?.glucoseMeasurement?.ValueInMgPerDl !== undefined &&
         graphData?.glucoseMeasurement?.ValueInMgPerDl !== null) {
       dispatchAlert(graphData.glucoseMeasurement.ValueInMgPerDl,graphData?.targetLow,graphData?.targetHigh);
     }
-  }, [graphData])
+  }, [graphData, connectionStatus.lost])
 
   if (!isReady) {
     return <LoadingScreen />;
@@ -201,8 +288,10 @@ export default function DashboardPage() {
             )
       } flex justify-center items-center draggable`}
     >
-      {currentWindowMode == 'windowed' ? (
+      {currentWindowMode === 'windowed' ? (
         <button
+          type="button"
+          aria-label={t('Settings')}
           onClick={() => openSettings('/settings/general')}
           className="absolute 2xs:top-5 2xs:right-5 right-0 top-0 outline-none hover:bg-white/20 p-2 rounded-md transition-all no-draggable"
         >
@@ -210,21 +299,35 @@ export default function DashboardPage() {
         </button>
       ) : (
         <button
+          type="button"
+          aria-label={t('WindowMode')}
           onClick={() => changeToWindowedMode()}
-          className="absolute 2xs:top-2 2xs:right-2 md:top-5 md:right-5 right-0 top-0 outline-none hover:bg-white/20 p-2 rounded-md transition-all no-draggable"
+          className="absolute z-20 2xs:top-2 2xs:right-2 md:top-5 md:right-5 right-0 top-0 outline-none hover:bg-white/20 p-2 rounded-md transition-all no-draggable"
         >
           <div className=''>
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white 2xs:h-6 2xs:w-6 w-4 h-4">
             <defs>
               <filter id="pathShadow" x="-50%" y="-50%" width="200%" height="200%">
-                <feDropShadow dx="2" dy="1" stdDeviation="2" flood-color="rgba(0, 0, 0, 0.9)"></feDropShadow>
+                <feDropShadow dx="2" dy="1" stdDeviation="2" floodColor="rgba(0, 0, 0, 0.9)"></feDropShadow>
               </filter>
             </defs>
 
-            <path d="M2 2.5C2 2.22386 2.22386 2 2.5 2H5.5C5.77614 2 6 2.22386 6 2.5C6 2.77614 5.77614 3 5.5 3H3V5.5C3 5.77614 2.77614 6 2.5 6C2.22386 6 2 5.77614 2 5.5V2.5ZM9 2.5C9 2.22386 9.22386 2 9.5 2H12.5C12.7761 2 13 2.22386 13 2.5V5.5C13 5.77614 12.7761 6 12.5 6C12.2239 6 12 5.77614 12 5.5V3H9.5C9.22386 3 9 2.77614 9 2.5ZM2.5 9C2.77614 9 3 9.22386 3 9.5V12H5.5C5.77614 12 6 12.2239 6 12.5C6 12.7761 5.77614 13 5.5 13H2.5C2.22386 13 2 12.7761 2 12.5V9.5C2 9.22386 2.22386 9 2.5 9ZM12.5 9C12.7761 9 13 9.22386 13 9.5V12.5C13 12.7761 12.7761 13 12.5 13H9.5C9.22386 13 9 12.7761 9 12.5C9 12.2239 9.22386 12 9.5 12H12V9.5C12 9.22386 12.2239 9 12.5 9Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" filter="url(#pathShadow)"></path>
+            <path d="M2 2.5C2 2.22386 2.22386 2 2.5 2H5.5C5.77614 2 6 2.22386 6 2.5C6 2.77614 5.77614 3 5.5 3H3V5.5C3 5.77614 2.77614 6 2.5 6C2.22386 6 2 5.77614 2 5.5V2.5ZM9 2.5C9 2.22386 9.22386 2 9.5 2H12.5C12.7761 2 13 2.22386 13 2.5V5.5C13 5.77614 12.7761 6 12.5 6C12.2239 6 12 5.77614 12 5.5V3H9.5C9.22386 3 9 2.77614 9 2.5ZM2.5 9C2.77614 9 3 9.22386 3 9.5V12H5.5C5.77614 12 6 12.2239 6 12.5C6 12.7761 5.77614 13 5.5 13H2.5C2.22386 13 2 12.7761 2 12.5V9.5C2 9.22386 2.22386 9 2.5 9ZM12.5 9C12.7761 9 13 9.22386 13 9.5V12.5C13 12.7761 12.7761 13 12.5 13H9.5C9.22386 13 9 12.7761 9 12.5C9 12.2239 9.22386 12 9.5 12H12V9.5C12 9.22386 12.2239 9 12.5 9Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd" filter="url(#pathShadow)"></path>
           </svg>
           </div>
         </button>
+      )}
+      {connectionStatus.lost &&
+        connectionStatus.detail &&
+        currentWindowMode !== 'overlayTransparent' && (
+        <div
+          role="alert"
+          className="absolute left-0 right-0 bottom-3 px-4 no-draggable z-0"
+        >
+          <p className="text-center text-white text-xs xs:text-sm font-medium bg-black/35 rounded-md px-3 py-2">
+            {connectionStatus.detail}
+          </p>
+        </div>
       )}
       <div className="flex items-center gap-3">
         <p
@@ -234,9 +337,7 @@ export default function DashboardPage() {
                 : ''
             } text-white font-semibold xs:text-3xl text-xl`}
         >
-          {getUserValue(graphData?.glucoseMeasurement?.ValueInMgPerDl) +
-            ' ' +
-            getUserUnit()}
+          {`${getUserValue(graphData?.glucoseMeasurement?.ValueInMgPerDl)} ${getUserUnit()}`}
         </p>
         <div
           className={`flex justify-center items-center xs:h-12 xs:w-12 h-6 w-6 rounded-full ${

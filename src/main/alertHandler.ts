@@ -1,8 +1,8 @@
 import { ipcMain, app} from "electron";
-import { getMainWindow } from './main';
-import { WindowModeManager } from './windowMode';
 import path from 'path';
 import fs from 'fs';
+import { getMainWindow } from './main';
+import { WindowModeManager } from './windowMode';
 
 const  setupAlertSoundFile = ()  => {
   const appDataDir = app.getPath('userData');

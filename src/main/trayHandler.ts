@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from "electron";
-import { createTray, updateTrayNumber, destroyTray } from './../renderer/lib/trayManager';
+import { createTray, updateTrayNumber, destroyTray } from "../renderer/lib/trayManager";
 
 let mainWindow: BrowserWindow | null = null;
 

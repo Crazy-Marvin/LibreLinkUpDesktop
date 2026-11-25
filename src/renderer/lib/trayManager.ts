@@ -56,6 +56,7 @@ class TrayManager {
   };
 
   private tooltipWindow: BrowserWindow | null = null;
+
   private isShowingTooltip: boolean = false;
 
   public updateTargets(targetLow: number, targetHigh: number): void {
@@ -88,7 +89,7 @@ class TrayManager {
     // Remove trailing zeros after decimal point
     if (formatted.endsWith('.00')) {
       return formatted.slice(0, -3);
-    } else if (formatted.endsWith('0')) {
+    } if (formatted.endsWith('0')) {
       return formatted.slice(0, -1);
     }
 
@@ -571,8 +572,8 @@ class TrayManager {
 
   // Color utility methods
   private getBackgroundColorForGlucoseLevel(level: number): RGBAColor {
-    const targetLow = this.state.targetLow;
-    const targetHigh = this.state.targetHigh;
+    const {targetLow} = this.state;
+    const {targetHigh} = this.state;
 
     // Convert level to mg/dL for consistent comparison if unit is mmol/L
     const levelInMgPerDl = this.state.currentUnit === 'mmol/L' ? level * 18 : level;

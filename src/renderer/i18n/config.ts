@@ -17,7 +17,7 @@ import ta from "./ta.json"
 i18next.use(initReactI18next).init({
   // lng: 'en', // if you're using a language detector, do not define the lng option
   fallbackLng: "en",
-  debug: true,
+  debug: process.env.NODE_ENV === 'development',
   resources: {
     en: {
       translation: en,

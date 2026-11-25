@@ -1,10 +1,11 @@
 /* eslint global-require: off, no-console: off, promise/always-return: off */
 import path from "path"
 import { app, BrowserWindow, ipcMain, shell } from "electron"
+import electronDebug from "electron-debug"
 // import { autoUpdater } from "electron-updater"
 // import log from "electron-log"
 import MenuBuilder from "./menu"
-import { resolveHtmlPath } from "./util"
+import { resolveHtmlPath, waitForDevServer } from "./util"
 import { WindowStateManager, WindowState } from './windowState';
 import { WindowModeManager } from "./windowMode";
 import { registerWindowHandlers, destroyWindowHandlers } from "./windowHandler";
@@ -12,7 +13,12 @@ import { registerLogoutHandler, destroyLogoutHandler } from "./logoutHandler";
 import { registerRefreshHandler, destroyRefreshHandler } from "./refreshHandler";
 import { registerAlertHandler, destroyAlertHandler } from "./alertHandler";
 import { registerTrayHandler, destroyTrayHandler, setTrayMainWindow } from "./trayHandler";
-import { destroyTray } from './../renderer/lib/trayManager';
+import {
+  registerAutostartHandler,
+  destroyAutostartHandler,
+  ensureAutostartAfterInstall,
+} from "./autostartHandler";
+import { destroyTray } from "../renderer/lib/trayManager";
 
 // class AppUpdater {
 //   constructor() {
@@ -33,8 +39,24 @@ if (process.env.NODE_ENV === 'production') {
 const isDebug =
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true'
 
+const windowModeManager = new WindowModeManager('main-window');
+const windowMode = windowModeManager.getWindowMode();
+
+/** Tiny overlay windows cannot host docked DevTools (v5 opens them by default). */
+const overlayTransparentWindows = new WeakSet<BrowserWindow>();
+
 if (isDebug) {
-  require('electron-debug')()
+  electronDebug({
+    windowSelector(win) {
+      if (overlayTransparentWindows.has(win)) {
+        return {
+          showDevTools: false,
+          devToolsMode: 'detach',
+        };
+      }
+      return true;
+    },
+  });
 }
 
 const installExtensions = async () => {
@@ -50,9 +72,6 @@ const installExtensions = async () => {
     .catch(console.log)
 }
 
-const windowModeManager = new WindowModeManager('main-window');
-const windowMode = windowModeManager.getWindowMode();
-
 const createWindow = async () => {
   if (isDebug) {
     await installExtensions()
@@ -63,6 +82,10 @@ const createWindow = async () => {
   mainWindow = new BrowserWindow(windowOptions);
 
   mainWindow.isPrimary = true;
+
+  if (windowMode === 'overlayTransparent') {
+    overlayTransparentWindows.add(mainWindow);
+  }
 
   // 👉 save window state
   const defaultWindowState: WindowState = {
@@ -75,17 +98,39 @@ const createWindow = async () => {
     windowStateManager.manage(mainWindow);
   }
 
-  mainWindow.loadURL(resolveHtmlPath('index.html'))
+  const devServerUrl = isDebug
+    ? await waitForDevServer('index.html')
+    : resolveHtmlPath('index.html')
+
+  mainWindow.loadURL(devServerUrl)
+
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, _description, _url, isMainFrame) => {
+    if (!isMainFrame || !isDebug || !mainWindow) {
+      return
+    }
+    // -102: CONNECTION_REFUSED, -106: INTERNET_DISCONNECTED
+    if (errorCode === -102 || errorCode === -106) {
+      setTimeout(() => {
+        mainWindow?.loadURL(resolveHtmlPath('index.html'))
+      }, 1000)
+    }
+  })
 
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined')
     }
-    if (process.env.START_MINIMIZED) {
-      mainWindow.minimize()
-      mainWindow.focus()
+    const loginLaunch = app.getLoginItemSettings();
+    const startedFromLogin =
+      loginLaunch.wasOpenedAtLogin || loginLaunch.wasOpenedAsHidden;
+    const startInBackground =
+      Boolean(process.env.START_MINIMIZED) ||
+      (startedFromLogin && windowMode === 'windowed');
+
+    if (startInBackground) {
+      mainWindow.hide();
     } else {
-      mainWindow.show()
+      mainWindow.show();
     }
 
     setTrayMainWindow(mainWindow);
@@ -100,7 +145,7 @@ const createWindow = async () => {
       } catch {
         // no-op: window may already be tearing down under hot-reload
       }
-      return;
+      
     }
     // allow close on non-mac or when quitting
   });
@@ -161,6 +206,7 @@ const getWindowOptions = (windowMode: 'overlay' | 'windowed' | 'overlayTranspare
       height: 600,
       alwaysOnTop: true,
       frame: false,
+      skipTaskbar: true,
     };
   }
   if (windowMode === 'overlayTransparent') {
@@ -171,11 +217,13 @@ const getWindowOptions = (windowMode: 'overlay' | 'windowed' | 'overlayTranspare
       alwaysOnTop: true,
       frame: false,
       transparent: true,
+      backgroundColor: '#00000000',
       resizable: false,
       hasShadow: false,
+      skipTaskbar: true,
     };
   }
-  else if (windowMode === 'windowed') {
+  if (windowMode === 'windowed') {
     return {
       ...baseOptions,
       width: 1024,
@@ -198,6 +246,7 @@ app.on('window-all-closed', () => {
   destroyRefreshHandler();
   destroyAlertHandler();
   destroyTrayHandler();
+  destroyAutostartHandler();
   destroyTray();
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
@@ -209,6 +258,7 @@ app.on('window-all-closed', () => {
 app
   .whenReady()
   .then(() => {
+    ensureAutostartAfterInstall();
     createWindow()
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
@@ -244,5 +294,6 @@ registerLogoutHandler();
 registerRefreshHandler();
 registerAlertHandler();
 registerTrayHandler();
+registerAutostartHandler();
 
 export const getMainWindow = () => mainWindow;
