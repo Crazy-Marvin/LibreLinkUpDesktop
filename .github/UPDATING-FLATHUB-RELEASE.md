@@ -31,6 +31,8 @@ sudo apt install flatpak-builder
 2. **Update the Manifest:**   
    Modify the manifest file with the new tag and commit the changes.
 
+   The `librelinkupdesktop` module **build-commands** must run `tsx ./.erb/scripts/clean.js` (not `npx ts-node`); offline Flatpak builds only cache packages from `generated-sources.json`, and the app uses **tsx** in `package.json`.
+
 3. **Generate Generated Sources:**   
    To build locally, you may copy the generated sources from [https://github.com/Crazy-Marvin/LibreLinkUpDesktop](https://github.com/Crazy-Marvin/LibreLinkUpDesktop) or regenerate a new file as described in the "Updating Node Modules" section.
 

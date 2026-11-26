@@ -303,6 +303,11 @@ jobs:
                             source['url'] = repo_url
                             source['commit'] = latest_commit
                             break
+                    for i, cmd in enumerate(module.get('build-commands', []) or []):
+                        if isinstance(cmd, str) and 'npx ts-node' in cmd:
+                            updated = cmd.replace('npx ts-node', 'tsx')
+                            module['build-commands'][i] = updated
+                            print(f"Updated build-command: ts-node -> tsx")
                     break
 
             # Write back with preserved formatting
@@ -372,4 +377,41 @@ jobs:
           git commit -m "chore: Update manifest with latest commit ${{ steps.commit-info.outputs.latest_commit }}"
           git push
           echo "✅ Manifest updated successfully"
+        fi
+
+  patch-flathub-build-commands:
+    runs-on: ubuntu-latest
+    needs: generate-sources
+    if: >-
+      needs.generate-sources.result == 'success' &&
+      (github.event_name == 'workflow_dispatch' ||
+       needs.generate-sources.outputs.has_changes != 'true')
+
+    steps:
+    - name: Checkout target repo
+      uses: actions/checkout@v6
+      with:
+        repository: ${{ env.TARGET_REPO }}
+        token: ${{ secrets.TARGET_REPO_TOKEN }}
+        ref: master
+
+    - name: Use tsx instead of ts-node in Flatpak build-commands
+      run: |
+        if grep -q 'npx ts-node' rocks.poopjournal.librelinkupdesktop.yml; then
+          sed -i 's/npx ts-node/tsx/g' rocks.poopjournal.librelinkupdesktop.yml
+          echo "Patched build-commands (tsx for offline npm cache)"
+        else
+          echo "No npx ts-node in manifest — nothing to patch"
+        fi
+
+    - name: Commit and push manifest build-command fix
+      run: |
+        git config user.name "GitHub Actions Bot"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add rocks.poopjournal.librelinkupdesktop.yml
+        if git diff --staged --quiet; then
+          echo "No manifest changes to commit"
+        else
+          git commit -m "fix: use tsx in Flatpak build-commands (matches package.json)"
+          git push
         fi
