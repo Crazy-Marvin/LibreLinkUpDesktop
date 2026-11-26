@@ -53,7 +53,7 @@ parts:
         fi
 
         npm install electron @electron/packager --legacy-peer-deps
-        tsx ./.erb/scripts/clean.js dist
+        npx tsx ./.erb/scripts/clean.js dist
 
         npx cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.main.prod.ts
         npx cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.prod.ts

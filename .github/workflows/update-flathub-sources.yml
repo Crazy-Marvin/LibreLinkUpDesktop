@@ -304,10 +304,21 @@ jobs:
                             source['commit'] = latest_commit
                             break
                     for i, cmd in enumerate(module.get('build-commands', []) or []):
-                        if isinstance(cmd, str) and 'npx ts-node' in cmd:
-                            updated = cmd.replace('npx ts-node', 'tsx')
+                        if not isinstance(cmd, str):
+                            continue
+                        updated = cmd
+                        if 'npx ts-node' in updated:
+                            updated = updated.replace('npx ts-node', 'npx tsx')
+                            print("Updated build-command: npx ts-node -> npx tsx")
+                        elif 'tsx ./.erb/scripts/clean.js' in updated and 'npx tsx ./.erb/scripts/clean.js' not in updated:
+                            updated = updated.replace(
+                                'tsx ./.erb/scripts/clean.js',
+                                'npx tsx ./.erb/scripts/clean.js',
+                                1,
+                            )
+                            print("Updated build-command: tsx -> npx tsx (PATH)")
+                        if updated != cmd:
                             module['build-commands'][i] = updated
-                            print(f"Updated build-command: ts-node -> tsx")
                     break
 
             # Write back with preserved formatting
@@ -395,13 +406,23 @@ jobs:
         token: ${{ secrets.TARGET_REPO_TOKEN }}
         ref: master
 
-    - name: Use tsx instead of ts-node in Flatpak build-commands
+    - name: Use npx tsx instead of ts-node in Flatpak build-commands
       run: |
-        if grep -q 'npx ts-node' rocks.poopjournal.librelinkupdesktop.yml; then
-          sed -i 's/npx ts-node/tsx/g' rocks.poopjournal.librelinkupdesktop.yml
-          echo "Patched build-commands (tsx for offline npm cache)"
+        set -e
+        MANIFEST=rocks.poopjournal.librelinkupdesktop.yml
+        touched=false
+        if grep -q 'npx ts-node' "$MANIFEST"; then
+          sed -i 's/npx ts-node/npx tsx/g' "$MANIFEST"
+          touched=true
+        fi
+        if grep -qE '^[[:space:]]*-[[:space:]]+tsx \./\.erb/scripts/clean\.js' "$MANIFEST"; then
+          sed -i 's/\([[:space:]]*-[[:space:]]*\)tsx \.\/.erb\/scripts\/clean\.js/\1npx tsx .\/\.erb\/scripts\/clean.js/g' "$MANIFEST"
+          touched=true
+        fi
+        if [ "$touched" = true ]; then
+          echo "Patched build-commands (npx tsx; offline cache + PATH)"
         else
-          echo "No npx ts-node in manifest — nothing to patch"
+          echo "Manifest already uses npx tsx — nothing to patch"
         fi
 
     - name: Commit and push manifest build-command fix
@@ -412,6 +433,6 @@ jobs:
         if git diff --staged --quiet; then
           echo "No manifest changes to commit"
         else
-          git commit -m "fix: use tsx in Flatpak build-commands (matches package.json)"
+          git commit -m "fix: use npx tsx in Flatpak build-commands"
           git push
         fi
