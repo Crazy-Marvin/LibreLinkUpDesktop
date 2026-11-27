@@ -1,4 +1,7 @@
+/* Tailwind v4 requires the string form; url() breaks utility generation. */
+/* stylelint-disable-next-line import-notation */
 @import "tailwindcss";
+
 @config "../../tailwind.config.js";
 
 @layer base {
