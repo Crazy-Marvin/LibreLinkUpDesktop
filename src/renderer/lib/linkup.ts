@@ -22,6 +22,31 @@ type GetGeneralRequest = {
   accountId: string
 }
 
+export type CgmApiError = {
+  error: 'NO_CONNECTIONS' | 'API_ERROR' | 'NETWORK_ERROR' | 'NO_DATA'
+  message: string
+}
+
+export type CgmConnectionData = {
+  glucoseMeasurement?: {
+    Timestamp?: string
+    FactoryTimestamp?: string
+    ValueInMgPerDl?: number
+    TrendArrow?: number
+  }
+  targetLow?: number
+  targetHigh?: number
+  [key: string]: unknown
+}
+
+export type CgmDataResult = CgmConnectionData | CgmApiError | null
+
+export function isCgmApiError(
+  data: CgmDataResult,
+): data is CgmApiError {
+  return data !== null && typeof data === 'object' && 'error' in data
+}
+
 export async function getAuthToken(request: LoginAttemptRequest): Promise<{
   token: string, accountId: string, accountCountry: string,
 } | { error: number } | null> {
@@ -106,7 +131,18 @@ export async function getAuthToken(request: LoginAttemptRequest): Promise<{
   return null;
 }
 
-export async function getCGMData(request: GetGeneralRequest): Promise<string|null|{error: string, message: string}> {
+const getApiErrorMessage = (
+  response: { data?: { status?: number; error?: { message?: string }; message?: string } },
+  fallback: string,
+): string => {
+  return (
+    response.data?.error?.message ||
+    response.data?.message ||
+    fallback
+  )
+}
+
+export async function getCGMData(request: GetGeneralRequest): Promise<CgmDataResult> {
   try {
     const baseURL = getBaseUrl(request.country)
     const headers = {
@@ -125,13 +161,26 @@ export async function getCGMData(request: GetGeneralRequest): Promise<string|nul
       url: '/connections',
     })
 
+    if (connResponse.data?.status !== undefined && connResponse.data.status !== 0) {
+      return {
+        error: 'API_ERROR',
+        message: getApiErrorMessage(
+          connResponse,
+          'Unable to fetch LibreLinkUp connections.',
+        ),
+      }
+    }
+
     const patientId = connResponse.data?.data[0]?.patientId
 
     if (!patientId) {
       if (connResponse.data?.data?.length === 0) {
         return { error: 'NO_CONNECTIONS', message: 'No LibreLinkUp connections found. Please set up a connection in your Libre app.' }
       }
-      return null
+      return {
+        error: 'NO_DATA',
+        message: 'No patient connection found in LibreLinkUp response.',
+      }
     }
 
     const graphResponse = await axios({
@@ -141,12 +190,39 @@ export async function getCGMData(request: GetGeneralRequest): Promise<string|nul
       url: `/connections/${patientId}/graph`,
     })
 
-    return graphResponse?.data?.data?.connection
+    if (graphResponse.data?.status !== undefined && graphResponse.data.status !== 0) {
+      return {
+        error: 'API_ERROR',
+        message: getApiErrorMessage(
+          graphResponse,
+          'Unable to fetch glucose data from LibreLinkUp.',
+        ),
+      }
+    }
+
+    const connection = graphResponse?.data?.data?.connection
+    if (!connection) {
+      return {
+        error: 'NO_DATA',
+        message: 'LibreLinkUp returned no glucose connection data.',
+      }
+    }
+
+    return connection
   } catch (error: any) {
     console.log('Unable to getCGMData: ', error)
-  }
+    const message =
+      error?.response?.data?.error?.message ||
+      error?.response?.data?.message ||
+      (error?.message
+        ? `Network error: ${error.message}`
+        : 'Failed to load glucose data. Please check your connection.')
 
-  return null
+    return {
+      error: 'NETWORK_ERROR',
+      message,
+    }
+  }
 }
 
 export async function getConnection(request: GetGeneralRequest): Promise<string|null> {

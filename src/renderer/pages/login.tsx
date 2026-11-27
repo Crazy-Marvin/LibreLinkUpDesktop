@@ -27,12 +27,12 @@ import { countries, languages } from "@/config/app"
 import { useAuthStore } from "@/stores/auth"
 import { ButtonPopover } from "@/components/ui/button-popover"
 import { QuestionMarkIcon } from "@radix-ui/react-icons"
-import logo from "../../../assets/logo.png"
 import { useEffect } from 'react';
 import {
   getLocalStorageWindowMode,
   setWindowMode,
 } from '@/lib/utils';
+import logo from "../../../assets/logo.png"
 
 const formSchema = z.object({
   username: z.string().min(2).max(50),
@@ -98,7 +98,7 @@ export default function LoginPage() {
 
       if (error.response) {
         // HTTP error responses
-        const status = error.response.status;
+        const {status} = error.response;
         toast.error(`Server error (${status}): ${error.response.statusText || 'Unknown error'}`);
       } else if (error.request) {
         // Network error - no response received

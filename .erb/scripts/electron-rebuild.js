@@ -1,7 +1,10 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
-import { dependencies } from '../../release/app/package.json';
 import webpackPaths from '../configs/webpack.paths';
+
+const { dependencies } = JSON.parse(
+  fs.readFileSync(webpackPaths.appPackagePath, 'utf8'),
+);
 
 if (
   Object.keys(dependencies || {}).length > 0 &&

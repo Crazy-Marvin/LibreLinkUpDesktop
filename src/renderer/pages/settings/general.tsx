@@ -1,9 +1,16 @@
 import { ThemeType, useTheme } from "@/components/theme-provider"
-import { Button } from "@/components/ui/button"
 import { ToggleSwitch } from "@/components/ui/toggle-switch"
 import SettingsLayout from "@/layouts/settings-layout"
-import { cn } from "@/lib/utils"
-import { useNavigate } from "react-router-dom"
+import {
+  setRedirectTo,
+  sendRefreshPrimaryWindow,
+  setWindowMode,
+  getLocalStorageWindowMode,
+  getTrayVisibility,
+  setTrayVisibility,
+  getOpenAtLogin,
+  setOpenAtLogin,
+} from "@/lib/utils"
 import {
   Select,
   SelectContent,
@@ -14,11 +21,9 @@ import {
 import { useAuthStore } from "@/stores/auth"
 import { countries, languages, themes, resultUnits, windowModes } from "@/config/app"
 import { useTranslation } from "react-i18next"
-import { setRedirectTo, sendRefreshPrimaryWindow, setWindowMode, getLocalStorageWindowMode, getTrayVisibility, setTrayVisibility} from "@/lib/utils"
 import { useEffect, useState, useCallback  } from 'react';
 
 export default function SettingsGeneralPage() {
-  const navigate = useNavigate()
   const { i18n, t } = useTranslation()
   const theme = localStorage.getItem('vite-ui-theme')
   const language = useAuthStore((state) => state.language)
@@ -30,8 +35,8 @@ export default function SettingsGeneralPage() {
   const setResultUnit = useAuthStore((state) => state.setResultUnit)
 
   const { setTheme } = useTheme()
-  const setAndRefreshTheme = (t: ThemeType) => {
-    setTheme(t)
+  const setAndRefreshTheme = (themeType: ThemeType) => {
+    setTheme(themeType)
     setRedirectTo('/settings/general')
     window.location.reload();
   }
@@ -59,6 +64,7 @@ export default function SettingsGeneralPage() {
   }, []);
 
   const [trayVisible, setTrayVisible] = useState<boolean>(true);
+  const [openAtLogin, setOpenAtLoginState] = useState<boolean>(false);
 
   useEffect(() => {
     const initializeTrayVisibility = () => {
@@ -69,12 +75,28 @@ export default function SettingsGeneralPage() {
     initializeTrayVisibility();
   }, []);
 
+  useEffect(() => {
+    const loadAutostart = async () => {
+      const enabled = await getOpenAtLogin();
+      setOpenAtLoginState(enabled);
+    };
+
+    loadAutostart().catch(() => undefined);
+  }, []);
+
   const handleToggleTray = useCallback(async (checked: boolean) => {
     setTrayVisible(checked);
     await setTrayVisibility(checked);
   }, []);
 
+  const handleToggleAutostart = useCallback(async (checked: boolean) => {
+    setOpenAtLoginState(checked);
+    const applied = await setOpenAtLogin(checked);
+    setOpenAtLoginState(applied);
+  }, []);
+
   const toggleSwitchKey = `tray-toggle-${trayVisible}`;
+  const autostartToggleKey = `autostart-toggle-${openAtLogin}`;
 
   return (
     <SettingsLayout>
@@ -131,7 +153,7 @@ export default function SettingsGeneralPage() {
           <p className="text-gray-400">{t('WindowMode')}</p>
           <Select key={currentWindowMode} onValueChange={handleSetWindowMode} defaultValue={currentWindowMode ?? 'windowed'}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={("SelectMode")} />
+              <SelectValue placeholder="SelectMode" />
             </SelectTrigger>
             <SelectContent>
               {windowModes.map(item => (
@@ -147,7 +169,7 @@ export default function SettingsGeneralPage() {
           <p className="text-gray-400">{t('Unit')}</p>
           <Select onValueChange={handleSetResultUnit} defaultValue={resultUnit ?? 'mg/dL'}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={("SelectUnit")} />
+              <SelectValue placeholder="SelectUnit" />
             </SelectTrigger>
             <SelectContent>
               {resultUnits.map(item => (
@@ -165,6 +187,15 @@ export default function SettingsGeneralPage() {
             key={toggleSwitchKey}
             checked={trayVisible}
             onChange={handleToggleTray}
+          />
+        </div>
+
+        <div className="flex flex-row justify-between gap-4">
+          <p className="text-gray-400">{t('Autostart on login')}</p>
+          <ToggleSwitch
+            key={autostartToggleKey}
+            checked={openAtLogin}
+            onChange={handleToggleAutostart}
           />
         </div>
       </div>

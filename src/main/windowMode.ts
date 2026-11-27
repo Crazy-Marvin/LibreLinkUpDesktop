@@ -22,7 +22,7 @@ export class WindowModeManager {
     }
   }
 
-  setWindowMode(mode: 'overlay' | 'windowed') {
+  setWindowMode(mode: 'overlay' | 'windowed' | 'overlayTransparent') {
     const data = JSON.stringify({ windowMode: mode }, null, 2);
     console.log('setWindowMode', this.filePath, data, mode);
     fs.writeFileSync(this.filePath, data);

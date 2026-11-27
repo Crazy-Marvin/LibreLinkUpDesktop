@@ -1,6 +1,8 @@
 export class AudioManager {
   private static instance: AudioManager;
+
   private audioInstance: HTMLAudioElement | null = null;
+
   private isPlaying: boolean = false;
 
   private constructor() {}

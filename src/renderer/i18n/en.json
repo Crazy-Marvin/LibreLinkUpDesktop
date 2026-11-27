@@ -84,5 +84,10 @@
   "Max Value" : "Max Value",
   "Enter Value" : "Enter Value",
   "Apply Changes": "Apply Changes",
-  "Show glucose values in tray": "System Tray"
+  "Show glucose values in tray": "System Tray",
+  "Autostart on login": "Autostart on login",
+  "sensorConnectionLostWithAge": "Connection to the sensor may be lost. No new value for {{age}}.",
+  "sensorConnectionLostUnknownAge": "Connection to the sensor may be lost. No new value is available.",
+  "unableToFetchGlucoseData": "Unable to fetch glucose data. Please try again.",
+  "failedToLoadGlucoseData": "Failed to load glucose data. Please check your connection."
 }
